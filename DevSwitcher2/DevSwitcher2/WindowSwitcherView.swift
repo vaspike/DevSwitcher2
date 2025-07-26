@@ -153,9 +153,9 @@ struct WindowRowView: View {
     WindowSwitcherView(windowManager: {
         let manager = WindowManager()
         manager.windows = [
-            WindowInfo(windowID: 1, title: "main.swift — DevSwitcher2 — Edited", projectName: "DevSwitcher2", appName: "Xcode", processID: 1234),
-            WindowInfo(windowID: 2, title: "README.md - MyProject", projectName: "MyProject", appName: "VS Code", processID: 5678),
-            WindowInfo(windowID: 3, title: "[WebApp] - index.html", projectName: "WebApp", appName: "IntelliJ IDEA", processID: 9012)
+            WindowInfo(windowID: 1, title: "main.swift — DevSwitcher2 — Edited", projectName: "DevSwitcher2", appName: "Xcode", processID: 1234, axWindowIndex: 0),
+            WindowInfo(windowID: 2, title: "README.md - MyProject", projectName: "MyProject", appName: "VS Code", processID: 5678, axWindowIndex: 1),
+            WindowInfo(windowID: 3, title: "[WebApp] - index.html", projectName: "WebApp", appName: "IntelliJ IDEA", processID: 9012, axWindowIndex: 2)
         ]
         return manager
     }())

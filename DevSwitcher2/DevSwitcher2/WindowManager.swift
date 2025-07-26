@@ -16,6 +16,7 @@ struct WindowInfo {
     let projectName: String
     let appName: String
     let processID: pid_t
+    let axWindowIndex: Int  // AX窗口的索引
 }
 
 class WindowManager: ObservableObject {
@@ -25,6 +26,9 @@ class WindowManager: ObservableObject {
     
     private var switcherWindow: NSWindow?
     private var eventMonitor: Any?
+    
+    // 缓存窗口ID到AXUIElement的映射
+    private var axElementCache: [CGWindowID: AXUIElement] = [:]
     
     init() {
         setupSwitcherWindow()
@@ -143,6 +147,7 @@ class WindowManager: ObservableObject {
     
     private func getCurrentAppWindows() {
         windows.removeAll()
+        axElementCache.removeAll() // 清空AX元素缓存
         
         // 打印所有运行的应用
         print("\n=== 调试信息开始 ===")
@@ -197,6 +202,7 @@ class WindowManager: ObservableObject {
          var candidateWindows: [[String: Any]] = []
          var validWindows: [[String: Any]] = []
          var windowCounter = 1
+         var validWindowIndex = 0  // 跟踪有效窗口的索引
         
         for windowInfo in windowList {
             guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t else { continue }
@@ -228,30 +234,42 @@ class WindowManager: ObservableObject {
                  if hasValidID && hasValidLayer && hasReasonableSize {
                     validWindows.append(windowInfo)
                     
-                                         // 尝试通过AX API获取更详细的窗口信息
+                                         // 通过AX API获取窗口标题和AX元素
+                     let (axTitle, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: validWindowIndex)
+                     
+                     let displayTitle: String
                      let projectName: String
-                     if windowTitle.isEmpty {
-                         let axTitle = getAXWindowTitle(windowID: windowID, processID: processID)
-                         if !axTitle.isEmpty {
-                             projectName = extractProjectName(from: axTitle, appName: targetApp.localizedName ?? "")
-                         } else {
-                             projectName = "\(targetApp.localizedName ?? "应用") 窗口 \(windowCounter)"
-                             windowCounter += 1
-                         }
-                     } else {
+                     
+                     if !axTitle.isEmpty {
+                         displayTitle = axTitle
+                         projectName = extractProjectName(from: axTitle, appName: targetApp.localizedName ?? "")
+                     } else if !windowTitle.isEmpty {
+                         displayTitle = windowTitle
                          projectName = extractProjectName(from: windowTitle, appName: targetApp.localizedName ?? "")
+                     } else {
+                         displayTitle = "\(targetApp.localizedName ?? "应用") 窗口 \(windowCounter)"
+                         projectName = displayTitle
+                         windowCounter += 1
+                     }
+                     
+                     // 缓存AXUIElement
+                     if let element = axElement {
+                         axElementCache[windowID] = element
                      }
                     
                     let window = WindowInfo(
                         windowID: windowID,
-                        title: windowTitle,
+                        title: displayTitle,
                         projectName: projectName,
                         appName: targetApp.localizedName ?? "",
-                        processID: processID
+                        processID: processID,
+                        axWindowIndex: validWindowIndex
                     )
                     
                     windows.append(window)
                     print("   ✅ 窗口已添加: '\(projectName)'")
+                    
+                    validWindowIndex += 1  // 增加有效窗口索引
                 } else {
                     print("   ❌ 窗口被过滤")
                 }
@@ -266,28 +284,37 @@ class WindowManager: ObservableObject {
          print("=== 调试信息结束 ===\n")
      }
      
-     // 通过 AX API 获取窗口标题
-     private func getAXWindowTitle(windowID: CGWindowID, processID: pid_t) -> String {
+     // 通过 AX API 获取特定窗口ID对应的标题和AXUIElement
+     private func getAXWindowInfo(windowID: CGWindowID, processID: pid_t, windowIndex: Int) -> (title: String, axElement: AXUIElement?) {
          let app = AXUIElementCreateApplication(processID)
          
          var windowsRef: CFTypeRef?
          guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef) == .success,
                let axWindows = windowsRef as? [AXUIElement] else {
-             return ""
+             print("   ❌ 无法获取AX窗口列表")
+             return ("", nil)
          }
          
-         for axWindow in axWindows {
-             // 直接尝试获取标题，不需要位置匹配
-             var titleRef: CFTypeRef?
-             if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
-                let title = titleRef as? String,
-                !title.isEmpty {
-                 print("   AX API 找到标题: '\(title)'")
-                 return title
-             }
+         print("   🔍 AX窗口总数: \(axWindows.count), 目标索引: \(windowIndex)")
+         
+         // 直接通过索引获取对应的AX窗口
+         guard windowIndex < axWindows.count else {
+             print("   ❌ 窗口索引 \(windowIndex) 超出范围 (总数: \(axWindows.count))")
+             return ("", nil)
          }
          
-         return ""
+         let axWindow = axWindows[windowIndex]
+         
+         // 获取窗口标题
+         var titleRef: CFTypeRef?
+         if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
+            let title = titleRef as? String {
+             print("   ✅ 窗口ID \(windowID) 通过索引[\(windowIndex)]匹配成功，标题: '\(title)'")
+             return (title, axWindow)
+         } else {
+             print("   ⚠️ 窗口ID \(windowID) 通过索引[\(windowIndex)]匹配成功，但无标题")
+             return ("", axWindow)
+         }
      }
     
          private func extractProjectName(from title: String, appName: String) -> String {
@@ -344,29 +371,76 @@ class WindowManager: ObservableObject {
     }
     
     private func activateWindow(_ window: WindowInfo) {
-        // 使用 AX API 激活窗口
-        let app = AXUIElementCreateApplication(window.processID)
+        print("\n🎯 尝试激活窗口ID: \(window.windowID), 标题: '\(window.title)'")
         
-        var windowsRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef)
-        
-        if result == .success, let windows = windowsRef as? [AXUIElement] {
-            for axWindow in windows {
-                var titleRef: CFTypeRef?
-                if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
-                   let title = titleRef as? String,
-                   title == window.title {
-                    
-                    // 激活窗口
-                    AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-                    
-                    // 将应用置于前台
-                    if let app = NSRunningApplication(processIdentifier: window.processID) {
-                        app.activate(options: .activateIgnoringOtherApps)
-                    }
-                    break
-                }
+        // 首先尝试从缓存中获取AXUIElement
+        if let cachedElement = axElementCache[window.windowID] {
+            print("   ✅ 从缓存中找到AX元素")
+            
+            // 激活窗口
+            let raiseResult = AXUIElementPerformAction(cachedElement, kAXRaiseAction as CFString)
+            print("   AXRaiseAction 结果: \(raiseResult == .success ? "成功" : "失败")")
+            
+            // 将应用置于前台
+            if let app = NSRunningApplication(processIdentifier: window.processID) {
+                let activateResult = app.activate()
+                print("   应用激活结果: \(activateResult ? "成功" : "失败")")
+            }
+            
+            if raiseResult == .success {
+                print("   ✅ 窗口激活成功")
+                return
+            } else {
+                print("   ⚠️ 缓存的AX元素激活失败，尝试重新获取")
+                // 从缓存中移除失效的元素
+                axElementCache.removeValue(forKey: window.windowID)
             }
         }
+        
+        // 如果缓存中没有或激活失败，重新获取AXUIElement
+        print("   🔍 重新获取AX元素")
+        let (_, axElement) = getAXWindowInfo(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex)
+        
+        if let element = axElement {
+            print("   ✅ 重新获取AX元素成功")
+            
+            // 更新缓存
+            axElementCache[window.windowID] = element
+            
+            // 激活窗口
+            let raiseResult = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+            print("   AXRaiseAction 结果: \(raiseResult == .success ? "成功" : "失败")")
+            
+            // 将应用置于前台
+            if let app = NSRunningApplication(processIdentifier: window.processID) {
+                let activateResult = app.activate()
+                print("   应用激活结果: \(activateResult ? "成功" : "失败")")
+            }
+            
+            if raiseResult == .success {
+                print("   ✅ 窗口激活成功")
+            } else {
+                print("   ❌ 窗口激活失败")
+            }
+        } else {
+            print("   ❌ 无法获取窗口ID \(window.windowID) 的AX元素")
+            
+            // 降级方案：尝试使用Core Graphics API
+            print("   🔄 尝试降级方案")
+            fallbackActivateWindow(window.windowID, processID: window.processID)
+        }
+    }
+    
+    // 降级方案：使用Core Graphics API激活窗口
+    private func fallbackActivateWindow(_ windowID: CGWindowID, processID: pid_t) {
+        // 将应用置于前台
+        if let app = NSRunningApplication(processIdentifier: processID) {
+            let activateResult = app.activate()
+            print("   降级方案 - 应用激活结果: \(activateResult ? "成功" : "失败")")
+        }
+        
+        // 注意：Core Graphics没有直接激活特定窗口的API
+        // 这里只能激活应用，让它自己决定显示哪个窗口
+        print("   ⚠️ 使用降级方案，只能激活应用，无法精确控制窗口")
     }
 } 

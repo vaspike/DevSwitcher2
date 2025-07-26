@@ -73,6 +73,32 @@ class HotkeyManager {
         }
     }
     
+    // 暂时禁用热键（当DS2窗口显示时）
+    func temporarilyDisableHotkey() {
+        if let eventHotKeyRef = eventHotKeyRef {
+            UnregisterEventHotKey(eventHotKeyRef)
+            self.eventHotKeyRef = nil
+            print("🔴 暂时禁用全局热键")
+        }
+    }
+    
+    // 重新启用热键（当DS2窗口关闭时）
+    func reEnableHotkey() {
+        guard eventHotKeyRef == nil else { return } // 如果已经注册了就不重复注册
+        
+        let hotkeyId = EventHotKeyID(signature: OSType(0x44455653), id: 1) // 'DEVS'
+        let keyCode = UInt32(kVK_ANSI_Grave) // ` 键
+        let modifiers = UInt32(cmdKey)
+        
+        let registerResult = RegisterEventHotKey(keyCode, modifiers, hotkeyId, GetApplicationEventTarget(), 0, &eventHotKeyRef)
+        
+        if registerResult == noErr {
+            print("🟢 重新启用全局热键")
+        } else {
+            print("❌ 重新启用全局热键失败: \(registerResult)")
+        }
+    }
+    
     private func handleHotkey() {
         DispatchQueue.main.async {
             self.windowManager.showWindowSwitcher()

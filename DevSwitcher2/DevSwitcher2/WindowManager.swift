@@ -26,9 +26,13 @@ class WindowManager: ObservableObject {
     
     private var switcherWindow: NSWindow?
     private var eventMonitor: Any?
+    private var globalEventMonitor: Any?
     
     // 缓存窗口ID到AXUIElement的映射
     private var axElementCache: [CGWindowID: AXUIElement] = [:]
+    
+    // HotkeyManager的弱引用，避免循环引用
+    weak var hotkeyManager: HotkeyManager?
     
     init() {
         setupSwitcherWindow()
@@ -38,6 +42,9 @@ class WindowManager: ObservableObject {
         // 确保事件监听器被清理
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
+        }
+        if let globalMonitor = globalEventMonitor {
+            NSEvent.removeMonitor(globalMonitor)
         }
     }
     
@@ -76,15 +83,24 @@ class WindowManager: ObservableObject {
         }
         
         isShowingSwitcher = true
-        currentWindowIndex = 0
+        // 默认选中第二个窗口（跳过当前窗口）
+        currentWindowIndex = windows.count > 1 ? 1 : 0
+        
+        // 暂时禁用全局热键，避免冲突
+        hotkeyManager?.temporarilyDisableHotkey()
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
         
-        // 监听键盘事件
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { [weak self] event in
+        // 监听键盘事件（包括修饰键变化）
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
             return self?.handleKeyEvent(event)
+        }
+        
+        // 添加全局事件监听器以监听修饰键变化（检测Command键释放）
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
+            self?.handleGlobalKeyEvent(event)
         }
     }
     
@@ -99,6 +115,13 @@ class WindowManager: ObservableObject {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
         }
+        if let globalMonitor = globalEventMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+            globalEventMonitor = nil
+        }
+        
+        // 重新启用全局热键
+        hotkeyManager?.reEnableHotkey()
         
         // 激活选中的窗口
         if currentWindowIndex < windows.count {
@@ -109,18 +132,31 @@ class WindowManager: ObservableObject {
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         guard isShowingSwitcher else { return event }
         
+        // ESC键关闭切换器
         if event.type == .keyUp && event.keyCode == 53 { // ESC key
             hideSwitcher()
             return nil
         }
         
-        if event.type == .keyUp && event.keyCode == 50 { // ` key
-            if event.modifierFlags.contains(.command) {
-                // 继续在窗口间切换
-                moveToNextWindow()
-                return nil
-            } else {
-                // 释放 Command 键，选择当前窗口
+        // 处理 ` 键
+        if event.keyCode == 50 { // ` key
+            if event.type == .keyDown {
+                // ` 键按下：检查Command键是否还在按下状态
+                if event.modifierFlags.contains(.command) {
+                    print("🟢 DS2已显示，检测到`键且Command键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
+                    moveToNextWindow()
+                    print("🟢 切换后索引: \(currentWindowIndex)")
+                    return nil // 阻止事件传递，避免触发全局热键
+                }
+            }
+            return event
+        }
+        
+        // 检测Command键松开
+        if event.type == .flagsChanged {
+            // Command键被松开（modifierFlags不再包含.command）
+            if !event.modifierFlags.contains(.command) {
+                print("🔴 检测到Command键松开，隐藏切换器")
                 hideSwitcher()
                 return nil
             }
@@ -129,9 +165,25 @@ class WindowManager: ObservableObject {
         return event
     }
     
+    private func handleGlobalKeyEvent(_ event: NSEvent) {
+        guard isShowingSwitcher else { return }
+        
+        // 只处理修饰键变化，检测Command键松开
+        if event.type == .flagsChanged {
+            if !event.modifierFlags.contains(.command) {
+                print("🌍 全局事件: 检测到Command键松开，隐藏切换器")
+                DispatchQueue.main.async {
+                    self.hideSwitcher()
+                }
+            }
+        }
+    }
+    
     func moveToNextWindow() {
         guard !windows.isEmpty else { return }
+        let oldIndex = currentWindowIndex
         currentWindowIndex = (currentWindowIndex + 1) % windows.count
+        print("🔄 moveToNextWindow: \(oldIndex) -> \(currentWindowIndex) (总数: \(windows.count))")
     }
     
     func moveToPreviousWindow() {

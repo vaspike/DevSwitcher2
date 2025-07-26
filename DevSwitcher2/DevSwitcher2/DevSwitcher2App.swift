@@ -39,6 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowManager = WindowManager()
         hotkeyManager = HotkeyManager(windowManager: windowManager!)
         
+        // 设置双向引用
+        windowManager?.hotkeyManager = hotkeyManager
+        
         // 请求辅助功能权限
         requestAccessibilityPermission()
         

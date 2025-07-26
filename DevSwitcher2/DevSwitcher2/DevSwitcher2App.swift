@@ -52,11 +52,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func requestAccessibilityPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        let accessibilityEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        let accessibilityEnabled = AXIsProcessTrusted()
         
         if !accessibilityEnabled {
             print(LocalizedStrings.accessibilityPermissionRequired)
+            
+            // 显示权限提示对话框
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "需要辅助功能权限"
+                alert.informativeText = "DevSwitcher2 需要辅助功能权限来获取和切换应用窗口。请在系统偏好设置 > 安全性与隐私 > 辅助功能 中启用 DevSwitcher2。"
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: "打开系统偏好设置")
+                alert.addButton(withTitle: "稍后设置")
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
+                    // 打开系统偏好设置
+                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                }
+            }
+            
+            // 定期检查权限状态
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
+                if AXIsProcessTrusted() {
+                    print("辅助功能权限已授予")
+                    timer.invalidate()
+                    // 权限获得后重新注册热键
+                    self.hotkeyManager?.registerHotkey()
+                }
+            }
+        } else {
+            print("辅助功能权限已启用")
         }
     }
 }

@@ -131,33 +131,110 @@ class WindowManager: ObservableObject {
     private func getCurrentAppWindows() {
         windows.removeAll()
         
-        guard let frontmostApp = NSWorkspace.shared.frontmostApplication else { return }
+        // 打印所有运行的应用
+        print("\n=== 调试信息开始 ===")
+        let allApps = NSWorkspace.shared.runningApplications
+        print("所有运行的应用:")
+        for app in allApps {
+            let isActive = app.isActive ? " [ACTIVE]" : ""
+            let bundleId = app.bundleIdentifier ?? "Unknown"
+            print("  - \(app.localizedName ?? "Unknown") (PID: \(app.processIdentifier), Bundle: \(bundleId))\(isActive)")
+        }
         
+        // 获取前台应用（排除自己）
+        let frontmostApp = allApps.first { app in
+            app.isActive && app.bundleIdentifier != Bundle.main.bundleIdentifier
+        }
+        
+        guard let targetApp = frontmostApp else {
+            print("❌ 无法获取前台应用")
+            return
+        }
+        
+        print("\n🎯 目标应用: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
+        print("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
+        
+        // 获取所有窗口
         let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        print("\n📋 系统总共找到 \(windowList.count) 个窗口")
+        
+        // 打印所有窗口信息
+        print("\n🔍 所有窗口详情:")
+        for (index, windowInfo) in windowList.enumerated() {
+            let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t ?? -1
+            let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+            let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+            let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
+            let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
+            let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
+            let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
+            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String ?? "Unknown"
+            let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+            
+            let isTarget = processID == targetApp.processIdentifier ? " ⭐ [TARGET]" : ""
+            
+            print("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
+            print("       Owner: \(ownerName)")
+            print("       Title: '\(windowTitle)'\(isTarget)")
+            print("       ID: \(windowID)")
+            print("")
+        }
+        
+        // 筛选目标应用的窗口
+        var candidateWindows: [[String: Any]] = []
+        var validWindows: [[String: Any]] = []
         
         for windowInfo in windowList {
-            guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
-                  processID == frontmostApp.processIdentifier,
-                  let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID,
-                  let windowTitle = windowInfo[kCGWindowName as String] as? String,
-                  !windowTitle.isEmpty,
-                  let layer = windowInfo[kCGWindowLayer as String] as? Int,
-                  layer == 0 else { // 只获取正常层级的窗口
-                continue
+            guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t else { continue }
+            
+            if processID == targetApp.processIdentifier {
+                candidateWindows.append(windowInfo)
+                
+                let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+                let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+                let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
+                let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+                
+                print("🔎 检查目标应用窗口:")
+                print("   标题: '\(windowTitle)'")
+                print("   Layer: \(layer)")
+                print("   ID: \(windowID)")
+                print("   OnScreen: \(isOnScreen)")
+                
+                // 检查过滤条件
+                let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
+                let hasTitle = !windowTitle.isEmpty
+                let hasValidLayer = layer >= 0
+                
+                print("   过滤检查: ID=\(hasValidID), Title=\(hasTitle), Layer=\(hasValidLayer)")
+                
+                if hasValidID && hasTitle && hasValidLayer {
+                    validWindows.append(windowInfo)
+                    
+                    let projectName = extractProjectName(from: windowTitle, appName: targetApp.localizedName ?? "")
+                    
+                    let window = WindowInfo(
+                        windowID: windowID,
+                        title: windowTitle,
+                        projectName: projectName,
+                        appName: targetApp.localizedName ?? "",
+                        processID: processID
+                    )
+                    
+                    windows.append(window)
+                    print("   ✅ 窗口已添加: '\(projectName)'")
+                } else {
+                    print("   ❌ 窗口被过滤")
+                }
+                print("")
             }
-            
-            let projectName = extractProjectName(from: windowTitle, appName: frontmostApp.localizedName ?? "")
-            
-            let window = WindowInfo(
-                windowID: windowID,
-                title: windowTitle,
-                projectName: projectName,
-                appName: frontmostApp.localizedName ?? "",
-                processID: processID
-            )
-            
-            windows.append(window)
         }
+        
+        print("📊 统计结果:")
+        print("   目标应用候选窗口: \(candidateWindows.count)")
+        print("   有效窗口: \(validWindows.count)")
+        print("   最终添加窗口: \(windows.count)")
+        print("=== 调试信息结束 ===\n")
     }
     
     private func extractProjectName(from title: String, appName: String) -> String {

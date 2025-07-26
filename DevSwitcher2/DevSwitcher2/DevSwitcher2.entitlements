@@ -4,5 +4,9 @@
 <dict>
 	<key>com.apple.security.automation.apple-events</key>
 	<true/>
+	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+	<array>
+		<string>com.apple.windowserver.active</string>
+	</array>
 </dict>
 </plist>

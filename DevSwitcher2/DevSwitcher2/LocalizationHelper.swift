@@ -35,4 +35,49 @@ struct LocalizedStrings {
     static let noWindowsFound = "no_windows_found".localized
     static let hotkeyRegistrationFailed = "hotkey_registration_failed".localized
     static let hotkeyRegistrationSuccess = "hotkey_registration_success".localized
+    
+    // 菜单栏
+    static let preferences = "preferences".localized
+    static let quitApp = "quit_app".localized
+    
+    // 偏好设置
+    static let preferencesTitle = "preferences_title".localized
+    static let coreSettings = "core_settings".localized
+    static let about = "about".localized
+    static let hotkeySettings = "hotkey_settings".localized
+    static let windowTitleConfig = "window_title_config".localized
+    static let modifierKey = "modifier_key".localized
+    static let triggerKey = "trigger_key".localized
+    static let apply = "apply".localized
+    static let reset = "reset".localized
+    static let currentHotkey = "current_hotkey".localized
+    
+    // 窗口标题配置
+    static let defaultExtractionStrategy = "default_extraction_strategy".localized
+    static let appSpecificConfig = "app_specific_config".localized
+    static let addApp = "add_app".localized
+    static let noAppConfigs = "no_app_configs".localized
+    static let strategy = "strategy".localized
+    static let delete = "delete".localized
+    
+    // 添加应用配置对话框
+    static let addAppConfig = "add_app_config".localized
+    static let bundleId = "bundle_id".localized
+    static let appName = "app_name".localized
+    static let extractionStrategy = "extraction_strategy".localized
+    static let customSeparator = "custom_separator".localized
+    static let cancel = "cancel".localized
+    static let save = "save".localized
+    
+    // 关于页面
+    static let aboutApp = "about_app".localized
+    static let version = "version".localized
+    static let appDescription = "app_description".localized
+    static let mainFeatures = "main_features".localized
+    static let feature1 = "feature_1".localized
+    static let feature2 = "feature_2".localized
+    static let feature3 = "feature_3".localized
+    static let feature4 = "feature_4".localized
+    static let developmentInfo = "development_info".localized
+    static let copyright = "copyright".localized
 } 

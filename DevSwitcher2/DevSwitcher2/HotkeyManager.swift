@@ -13,22 +13,41 @@ class HotkeyManager {
     private var eventHotKeyRef: EventHotKeyRef?
     private let windowManager: WindowManager
     private var eventHandler: EventHandlerRef?
+    private let settingsManager = SettingsManager.shared
     
     init(windowManager: WindowManager) {
         self.windowManager = windowManager
+        
+        // 监听快捷键设置变化
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(hotkeySettingsChanged),
+            name: .hotkeySettingsChanged,
+            object: nil
+        )
     }
     
     deinit {
         unregisterHotkey()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func hotkeySettingsChanged() {
+        print("快捷键设置已更改，重新注册热键")
+        unregisterHotkey()
+        registerHotkey()
     }
     
     func registerHotkey() {
         // 定义热键 ID
         let hotkeyId = EventHotKeyID(signature: OSType(0x44455653), id: 1) // 'DEVS'
         
-        // 注册 Command + ` 热键
-        let keyCode = UInt32(kVK_ANSI_Grave) // ` 键
-        let modifiers = UInt32(cmdKey)
+        // 从设置中获取快捷键配置
+        let settings = settingsManager.settings
+        let keyCode = settings.triggerKey.keyCode
+        let modifiers = settings.modifierKey.carbonModifier
+        
+        print("注册热键: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
         
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         
@@ -87,13 +106,14 @@ class HotkeyManager {
         guard eventHotKeyRef == nil else { return } // 如果已经注册了就不重复注册
         
         let hotkeyId = EventHotKeyID(signature: OSType(0x44455653), id: 1) // 'DEVS'
-        let keyCode = UInt32(kVK_ANSI_Grave) // ` 键
-        let modifiers = UInt32(cmdKey)
+        let settings = settingsManager.settings
+        let keyCode = settings.triggerKey.keyCode
+        let modifiers = settings.modifierKey.carbonModifier
         
         let registerResult = RegisterEventHotKey(keyCode, modifiers, hotkeyId, GetApplicationEventTarget(), 0, &eventHotKeyRef)
         
         if registerResult == noErr {
-            print("🟢 重新启用全局热键")
+            print("🟢 重新启用全局热键: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
         } else {
             print("❌ 重新启用全局热键失败: \(registerResult)")
         }

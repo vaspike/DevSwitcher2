@@ -19,10 +19,11 @@ struct DevSwitcher2App: App {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusItem: NSStatusItem?
     var windowManager: WindowManager?
     var hotkeyManager: HotkeyManager?
+    var preferencesWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 创建状态栏图标
@@ -33,6 +34,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.action = #selector(statusBarButtonClicked)
             button.target = self
             button.toolTip = LocalizedStrings.statusItemTooltip
+            
+            // 设置右键菜单
+            setupStatusBarMenu()
         }
         
         // 初始化窗口管理器和热键管理器
@@ -50,8 +54,65 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func statusBarButtonClicked() {
-        // 点击状态栏图标时的操作
-        windowManager?.showWindowSwitcher()
+        // 左键点击不再触发主逻辑，改为显示菜单
+        if let menu = statusItem?.menu {
+            statusItem?.popUpMenu(menu)
+        }
+    }
+    
+    private func setupStatusBarMenu() {
+        let menu = NSMenu()
+        
+        // 偏好设置菜单项
+        let preferencesItem = NSMenuItem(title: LocalizedStrings.preferences, action: #selector(showPreferences), keyEquivalent: ",")
+        preferencesItem.target = self
+        menu.addItem(preferencesItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 退出应用菜单项
+        let quitItem = NSMenuItem(title: LocalizedStrings.quitApp, action: #selector(quitApplication), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+        
+        statusItem?.menu = menu
+    }
+    
+    @objc func showPreferences() {
+        // 如果偏好设置窗口已经存在，就激活它
+        if let window = preferencesWindow {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate()
+            return
+        }
+        
+        // 创建偏好设置窗口
+        let contentView = PreferencesView()
+        let hostingView = NSHostingView(rootView: contentView)
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = LocalizedStrings.preferencesTitle
+        window.contentView = hostingView
+        window.center()
+        window.setFrameAutosaveName("PreferencesWindow")
+        window.isReleasedWhenClosed = false
+        
+        // 设置窗口关闭时的清理
+        window.delegate = self
+        
+        preferencesWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+    }
+    
+    @objc func quitApplication() {
+        NSApplication.shared.terminate(nil)
     }
     
     func requestAccessibilityPermission() {
@@ -87,6 +148,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } else {
             print("辅助功能权限已启用")
+        }
+    }
+    
+    // MARK: - NSWindowDelegate
+    func windowWillClose(_ notification: Notification) {
+        if let window = notification.object as? NSWindow, window == preferencesWindow {
+            preferencesWindow = nil
         }
     }
 }

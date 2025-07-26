@@ -34,6 +34,9 @@ class WindowManager: ObservableObject {
     // HotkeyManager的弱引用，避免循环引用
     weak var hotkeyManager: HotkeyManager?
     
+    // 设置管理器
+    private let settingsManager = SettingsManager.shared
+    
     init() {
         setupSwitcherWindow()
     }
@@ -138,12 +141,13 @@ class WindowManager: ObservableObject {
             return nil
         }
         
-        // 处理 ` 键
-        if event.keyCode == 50 { // ` key
+        // 处理触发键
+        let settings = settingsManager.settings
+        if event.keyCode == UInt16(settings.triggerKey.keyCode) {
             if event.type == .keyDown {
-                // ` 键按下：检查Command键是否还在按下状态
-                if event.modifierFlags.contains(.command) {
-                    print("🟢 DS2已显示，检测到`键且Command键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
+                // 触发键按下：检查修饰键是否还在按下状态
+                if event.modifierFlags.contains(settings.modifierKey.eventModifier) {
+                    print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
                     moveToNextWindow()
                     print("🟢 切换后索引: \(currentWindowIndex)")
                     return nil // 阻止事件传递，避免触发全局热键
@@ -152,11 +156,12 @@ class WindowManager: ObservableObject {
             return event
         }
         
-        // 检测Command键松开
+        // 检测修饰键松开
         if event.type == .flagsChanged {
-            // Command键被松开（modifierFlags不再包含.command）
-            if !event.modifierFlags.contains(.command) {
-                print("🔴 检测到Command键松开，隐藏切换器")
+            let settings = settingsManager.settings
+            // 修饰键被松开（modifierFlags不再包含对应修饰键）
+            if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
+                print("🔴 检测到\(settings.modifierKey.displayName)键松开，隐藏切换器")
                 hideSwitcher()
                 return nil
             }
@@ -168,10 +173,11 @@ class WindowManager: ObservableObject {
     private func handleGlobalKeyEvent(_ event: NSEvent) {
         guard isShowingSwitcher else { return }
         
-        // 只处理修饰键变化，检测Command键松开
+        // 只处理修饰键变化，检测修饰键松开
         if event.type == .flagsChanged {
-            if !event.modifierFlags.contains(.command) {
-                print("🌍 全局事件: 检测到Command键松开，隐藏切换器")
+            let settings = settingsManager.settings
+            if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
+                print("🌍 全局事件: 检测到\(settings.modifierKey.displayName)键松开，隐藏切换器")
                 DispatchQueue.main.async {
                     self.hideSwitcher()
                 }
@@ -294,10 +300,18 @@ class WindowManager: ObservableObject {
                      
                      if !axTitle.isEmpty {
                          displayTitle = axTitle
-                         projectName = extractProjectName(from: axTitle, appName: targetApp.localizedName ?? "")
+                         projectName = settingsManager.extractProjectName(
+                             from: axTitle, 
+                             bundleId: targetApp.bundleIdentifier ?? "", 
+                             appName: targetApp.localizedName ?? ""
+                         )
                      } else if !windowTitle.isEmpty {
                          displayTitle = windowTitle
-                         projectName = extractProjectName(from: windowTitle, appName: targetApp.localizedName ?? "")
+                         projectName = settingsManager.extractProjectName(
+                             from: windowTitle, 
+                             bundleId: targetApp.bundleIdentifier ?? "", 
+                             appName: targetApp.localizedName ?? ""
+                         )
                      } else {
                          displayTitle = "\(targetApp.localizedName ?? "应用") 窗口 \(windowCounter)"
                          projectName = displayTitle
@@ -369,58 +383,6 @@ class WindowManager: ObservableObject {
          }
      }
     
-         private func extractProjectName(from title: String, appName: String) -> String {
-         // 根据不同 IDE 提取项目名的逻辑
-         
-         // Cursor 特殊处理
-         if appName.contains("Cursor") {
-             // Cursor 的标题格式可能是: "filename - folder" 或者包含路径信息
-             if let range = title.range(of: " - ") {
-                 let projectPart = String(title[range.upperBound...])
-                 // 如果还有更多的 " - "，取最后一部分
-                 if let lastRange = projectPart.range(of: " - ", options: .backwards) {
-                     return String(projectPart[lastRange.upperBound...])
-                 }
-                 return projectPart
-             }
-             // 如果包含路径分隔符，取最后一个路径组件
-             if title.contains("/") {
-                 let components = title.components(separatedBy: "/")
-                 return components.last ?? title
-             }
-         }
-         
-         // VS Code: "filename - projectname"
-         if appName.contains("Code") {
-             if let range = title.range(of: " - ") {
-                 let projectPart = String(title[range.upperBound...])
-                 // 如果还有更多的 " - "，取最后一部分
-                 if let lastRange = projectPart.range(of: " - ", options: .backwards) {
-                     return String(projectPart[lastRange.upperBound...])
-                 }
-                 return projectPart
-             }
-         }
-        
-        // Xcode: "projectname — Edited"
-        if appName.contains("Xcode") {
-            if let range = title.range(of: " — ") {
-                return String(title[..<range.lowerBound])
-            }
-        }
-        
-        // IntelliJ IDEA: "[projectname] - filename"
-        if appName.contains("IDEA") || appName.contains("IntelliJ") {
-            if title.hasPrefix("[") {
-                if let endBracket = title.firstIndex(of: "]") {
-                    return String(title[title.index(after: title.startIndex)..<endBracket])
-                }
-            }
-        }
-        
-        // 默认情况：直接返回窗口标题
-        return title
-    }
     
     private func activateWindow(_ window: WindowInfo) {
         print("\n🎯 尝试激活窗口ID: \(window.windowID), 标题: '\(window.title)'")

@@ -1,0 +1,25 @@
+/* 
+  Localizable.strings
+  DevSwitcher2
+
+  Created by river on 2025-07-26.
+  
+*/
+
+// 窗口切换器界面
+"window_switcher_title" = "选择窗口";
+"hotkey_hint" = "Command + ` 切换";
+"cancel_hint" = "ESC 取消";
+"select_hint" = "Enter 选择";
+
+// 状态栏
+"status_item_tooltip" = "DevSwitcher2 - 增强窗口切换";
+
+// 权限提示
+"accessibility_permission_required" = "DevSwitcher2 需要辅助功能权限才能正常工作。";
+"open_system_preferences" = "打开系统偏好设置";
+
+// 错误信息
+"no_windows_found" = "未找到当前应用的窗口";
+"hotkey_registration_failed" = "热键注册失败";
+"hotkey_registration_success" = "成功注册 Command + ` 热键"; 

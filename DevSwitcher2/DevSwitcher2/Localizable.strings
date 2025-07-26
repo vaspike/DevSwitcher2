@@ -1,0 +1,25 @@
+/* 
+  Localizable.strings
+  DevSwitcher2
+
+  Created by river on 2025-07-26.
+  
+*/
+
+// 窗口切换器界面
+"window_switcher_title" = "Select Window";
+"hotkey_hint" = "Command + ` to switch";
+"cancel_hint" = "ESC to cancel";
+"select_hint" = "Enter to select";
+
+// 状态栏
+"status_item_tooltip" = "DevSwitcher2 - Enhanced Window Switching";
+
+// 权限提示
+"accessibility_permission_required" = "DevSwitcher2 needs Accessibility permissions to function properly.";
+"open_system_preferences" = "Open System Preferences";
+
+// 错误信息
+"no_windows_found" = "No windows found for the current application";
+"hotkey_registration_failed" = "Failed to register hotkey";
+"hotkey_registration_success" = "Successfully registered Command + ` hotkey"; 

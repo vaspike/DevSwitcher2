@@ -132,11 +132,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             // 显示权限提示对话框
             DispatchQueue.main.async {
                 let alert = NSAlert()
-                alert.messageText = "需要辅助功能权限"
-                alert.informativeText = "DevSwitcher2 需要辅助功能权限来获取和切换应用窗口。请在系统偏好设置 > 安全性与隐私 > 辅助功能 中启用 DevSwitcher2。"
+                alert.messageText = LocalizedStrings.accessibilityPermissionTitle
+                alert.informativeText = LocalizedStrings.accessibilityPermissionMessage
                 alert.alertStyle = .informational
-                alert.addButton(withTitle: "打开系统偏好设置")
-                alert.addButton(withTitle: "稍后设置")
+                alert.addButton(withTitle: LocalizedStrings.openSystemPreferencesButton)
+                alert.addButton(withTitle: LocalizedStrings.setupLater)
                 
                 let response = alert.runModal()
                 if response == .alertFirstButtonReturn {
@@ -148,7 +148,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             // 定期检查权限状态
             accessibilityCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
                 if AXIsProcessTrusted() {
-                    print("辅助功能权限已授予")
+                    print(LocalizedStrings.accessibilityPermissionGranted)
                     timer.invalidate()
                     self?.accessibilityCheckTimer = nil
                     // 权限获得后重新注册热键
@@ -156,7 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 }
             }
         } else {
-            print("辅助功能权限已启用")
+            print(LocalizedStrings.accessibilityPermissionGranted)
         }
     }
     

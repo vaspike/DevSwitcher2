@@ -6,30 +6,131 @@
   
 */
 
-// DS2窗口切换器界面
+// MARK: - 语言设置
+"language" = "语言";
+"language_system" = "跟随系统";
+"language_english" = "English";
+"language_chinese" = "简体中文";
+"language_restart_hint" = "更改后重启应用后生效";
+
+// MARK: - DS2窗口切换器界面
 "window_switcher_title" = "选择窗口";
 "hotkey_hint_template" = "%@ + %@ 切换";
 "cancel_hint" = "ESC 取消";
 "select_hint" = "Enter 选择";
 
-// CT2应用切换器界面
+// MARK: - CT2应用切换器界面
 "app_switcher_title" = "应用切换器";
 "ct2_hotkey_hint_template" = "按住 %@ 继续切换";
 "ct2_cancel_hint" = "ESC 取消";
 "ct2_select_hint" = "释放修饰键激活";
 
-// 应用项显示
+// MARK: - 应用项显示
 "single_window" = "1 个窗口";
 "multiple_windows" = "%d 个窗口";
 
-// 状态栏
+// MARK: - 状态栏
 "status_item_tooltip" = "DevSwitcher2 - 增强窗口切换";
 
-// 权限提示
+// MARK: - 权限提示
 "accessibility_permission_required" = "DevSwitcher2 需要辅助功能权限才能正常工作。";
 "open_system_preferences" = "打开系统偏好设置";
+"accessibility_permission_title" = "需要辅助功能权限";
+"accessibility_permission_message" = "DevSwitcher2 需要辅助功能权限来获取和切换应用窗口。请在系统偏好设置 > 安全性与隐私 > 辅助功能 中启用 DevSwitcher2。";
+"open_system_preferences_button" = "打开系统偏好设置";
+"setup_later" = "稍后设置";
+"accessibility_permission_granted" = "辅助功能权限已授予";
 
-// 错误信息
+// MARK: - 错误信息
 "no_windows_found" = "未找到当前应用的窗口";
 "hotkey_registration_failed" = "热键注册失败";
-"hotkey_registration_success" = "成功注册 Command + ` 热键"; 
+"hotkey_registration_success" = "成功注册 Command + ` 热键";
+"hotkey_conflict_title" = "快捷键冲突";
+"hotkey_conflict_message" = "该快捷键可能与系统或其他应用冲突，请选择其他组合。";
+"confirm" = "确定";
+
+// MARK: - 菜单栏
+"preferences" = "偏好设置";
+"quit_app" = "退出 DevSwitcher2";
+
+// MARK: - 偏好设置
+"preferences_title" = "偏好设置";
+"core_settings" = "核心功能";
+"about" = "关于";
+"hotkey_settings" = "快捷键设置";
+"window_title_config" = "窗口标题配置";
+"modifier_key" = "修饰键";
+"trigger_key" = "触发键";
+"apply" = "应用";
+"reset" = "重置";
+"configuration" = "配置";
+"current_hotkey" = "当前快捷键";
+
+// MARK: - DS2设置
+"ds2_same_app_window_switching" = "应用内多窗口切换器";
+"current_ds2_hotkey" = "当前快捷键";
+
+// MARK: - CT2设置
+"ct2_app_switcher" = "多应用切换器";
+"enable_ct2" = "启用";
+"current_ct2_hotkey" = "当前快捷键";
+"ct2_function_disabled" = "多应用切换器 功能已禁用";
+
+// MARK: - 修饰键
+"modifier_command" = "Command ⌘";
+"modifier_option" = "Option ⌥";
+"modifier_control" = "Control ⌃";
+"modifier_function" = "Function fn";
+
+// MARK: - 触发键
+"trigger_grave" = "反引号 `";
+"trigger_tab" = "Tab";
+"trigger_space" = "空格";
+"trigger_semicolon" = "分号 ;";
+"trigger_quote" = "单引号 '";
+"trigger_comma" = "逗号 ,";
+"trigger_period" = "句号 .";
+"trigger_slash" = "斜杠 /";
+"trigger_backslash" = "反斜杠 \\";
+"trigger_left_bracket" = "左中括号 [";
+"trigger_right_bracket" = "右中括号 ]";
+
+// MARK: - 窗口标题配置
+"default_extraction_strategy" = "默认提取策略";
+"app_specific_config" = "应用特定配置";
+"add_app" = "添加应用";
+"no_app_configs" = "暂无应用特定配置";
+"strategy" = "策略";
+"delete" = "删除";
+
+// MARK: - 标题提取策略
+"strategy_first_part" = "第一部分";
+"strategy_last_part" = "最后部分";
+"strategy_before_first_separator" = "第一个分隔符之前";
+"strategy_after_last_separator" = "最后一个分隔符之后";
+"strategy_full_title" = "完整标题";
+"strategy_custom_separator" = "自定义分隔符";
+
+// MARK: - 添加应用配置对话框
+"add_app_config" = "添加应用配置";
+"bundle_id" = "Bundle ID";
+"app_name" = "应用名称";
+"extraction_strategy" = "提取策略";
+"custom_separator" = "自定义分隔符";
+"cancel" = "取消";
+"save" = "保存";
+"bundle_id_placeholder" = "例如: com.apple.dt.Xcode";
+"app_name_placeholder" = "例如: Xcode";
+"custom_separator_placeholder" = "例如:  - ";
+
+// MARK: - 关于页面
+"about_app" = "关于此应用";
+"version" = "版本 2.0.0";
+"app_description" = "DevSwitcher2 是一个高效的 macOS 窗口切换工具，帮助您快速在同一应用的不同窗口之间切换。";
+"main_features" = "主要功能:";
+"feature_1" = "• 快速窗口切换";
+"feature_2" = "• 自定义快捷键";
+"feature_3" = "• 智能标题识别";
+"feature_4" = "• 多应用支持";
+"development_info" = "开发信息";
+"copyright" = "© 2025 DevSwitcher2. 保留所有权利。"; 

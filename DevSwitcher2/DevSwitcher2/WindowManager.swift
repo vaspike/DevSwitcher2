@@ -474,7 +474,7 @@ class WindowManager: ObservableObject {
                     validWindows.append(windowInfo)
                     
                                          // 通过AX API获取窗口标题和AX元素
-                     let (axTitle, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: validWindowIndex)
+                     let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: validWindowIndex)
                      
                      let displayTitle: String
                      let projectName: String
@@ -596,7 +596,7 @@ class WindowManager: ObservableObject {
                  let currentAppWindowCount = appWindows[processID]?.count ?? 0
                  
                  // 通过AX API获取窗口标题
-                 let (axTitle, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentAppWindowCount)
+                 let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentAppWindowCount)
                  
                  let displayTitle: String
                  let projectName: String

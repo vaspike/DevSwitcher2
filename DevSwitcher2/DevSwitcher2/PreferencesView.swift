@@ -10,39 +10,19 @@ import SwiftUI
 struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var settingsManager = SettingsManager.shared
+    @StateObject private var languageManager = LanguageManager.shared
     @State private var selectedTab = 0
     
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
-            HStack {
-                Text("偏好设置")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                        .font(.title2)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding()
-            .background(.regularMaterial)
-            
-            Divider()
             
             // Tab选择器
             HStack {
-                TabButton(title: "核心功能", isSelected: selectedTab == 0) {
+                TabButton(title: LocalizedStrings.coreSettings, isSelected: selectedTab == 0) {
                     selectedTab = 0
                 }
                 
-                TabButton(title: "关于", isSelected: selectedTab == 1) {
+                TabButton(title: LocalizedStrings.about, isSelected: selectedTab == 1) {
                     selectedTab = 1
                 }
                 
@@ -64,8 +44,12 @@ struct PreferencesView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 600, height: 500)
+        .frame(width: 700, height: 500)
         .background(.ultraThinMaterial)
+        .onReceive(NotificationCenter.default.publisher(for: .languageChanged)) { _ in
+            // 当语言变化时强制刷新视图
+            // SwiftUI会自动重新计算LocalizedStrings的值
+        }
     }
 }
 
@@ -93,6 +77,7 @@ struct TabButton: View {
 // MARK: - 核心功能设置视图
 struct CoreSettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
+    @StateObject private var languageManager = LanguageManager.shared
     @State private var selectedModifier: ModifierKey
     @State private var selectedTrigger: TriggerKey
     @State private var showingHotkeyWarning = false
@@ -113,64 +98,113 @@ struct CoreSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
+            // 语言设置
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text(LocalizedStrings.language)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                }
+                
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(LocalizedStrings.language)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Picker(LocalizedStrings.language, selection: $languageManager.currentLanguage) {
+                            ForEach(AppLanguage.allCases, id: \.self) { language in
+                                Text(language.displayName).tag(language)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: .infinity)
+                        .onChange(of: languageManager.currentLanguage) { newLanguage in
+                            languageManager.setLanguage(newLanguage)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(LocalizedStrings.languageRestartHint)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                            .frame(maxWidth: .infinity)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding()
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+            
+            Divider()
+            
             // DS2快捷键设置
             VStack(alignment: .leading, spacing: 16) {
-                Text("DS2 - 同应用窗口切换")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                
                 HStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("修饰键")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Picker("修饰键", selection: $selectedModifier) {
-                            ForEach(ModifierKey.allCases, id: \.self) { key in
-                                Text(key.displayName).tag(key)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 150)
-                    }
-                    
-                    Text("+")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 8)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("触发键")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Picker("触发键", selection: $selectedTrigger) {
-                            ForEach(TriggerKey.allCases, id: \.self) { key in
-                                Text(key.displayName).tag(key)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 150)
-                    }
+                    Text(LocalizedStrings.ds2SameAppWindowSwitching)
+                        .font(.title3)
+                        .fontWeight(.semibold)
                     
                     Spacer()
                     
-                    VStack(spacing: 8) {
-                        Button("应用") {
+                    HStack(spacing: 8) {
+                        Button(LocalizedStrings.apply) {
                             applyDS2HotkeySettings()
                         }
                         .buttonStyle(.borderedProminent)
                         
-                        Button("重置") {
+                        Button(LocalizedStrings.reset) {
                             resetDS2HotkeySettings()
                         }
                         .buttonStyle(.bordered)
                     }
                 }
+                
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(LocalizedStrings.modifierKey)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Picker(LocalizedStrings.modifierKey, selection: $selectedModifier) {
+                            ForEach(ModifierKey.allCases, id: \.self) { key in
+                                Text(key.displayName).tag(key)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: .infinity)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Text("+")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .frame(width: 20)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(LocalizedStrings.triggerKey)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Picker(LocalizedStrings.triggerKey, selection: $selectedTrigger) {
+                            ForEach(TriggerKey.allCases, id: \.self) { key in
+                                Text(key.displayName).tag(key)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: .infinity)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
                 .padding()
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 
-                Text("当前DS2快捷键: \(selectedModifier.displayName) + \(selectedTrigger.displayName)")
+                Text("\(LocalizedStrings.currentDS2Hotkey): \(selectedModifier.displayName) + \(selectedTrigger.displayName)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -180,13 +214,13 @@ struct CoreSettingsView: View {
             // CT2快捷键设置
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("CT2 - 应用切换器")
+                    Text(LocalizedStrings.ct2AppSwitcher)
                         .font(.title3)
                         .fontWeight(.semibold)
                     
                     Spacer()
                     
-                    Toggle("启用CT2", isOn: $ct2Enabled)
+                    Toggle(LocalizedStrings.enableCT2, isOn: $ct2Enabled)
                         .toggleStyle(SwitchToggleStyle())
                         .onChange(of: ct2Enabled) { newValue in
                             // 实时更新CT2启用状态
@@ -196,62 +230,72 @@ struct CoreSettingsView: View {
                 }
                 
                 if ct2Enabled {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("修饰键")
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text(LocalizedStrings.configuration)
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .fontWeight(.medium)
                             
-                            Picker("CT2修饰键", selection: $selectedCT2Modifier) {
-                                ForEach(ModifierKey.allCases, id: \.self) { key in
-                                    Text(key.displayName).tag(key)
+                            Spacer()
+                            
+                            HStack(spacing: 8) {
+                                Button(LocalizedStrings.apply) {
+                                    applyCT2HotkeySettings()
                                 }
+                                .buttonStyle(.borderedProminent)
+                                
+                                Button(LocalizedStrings.reset) {
+                                    resetCT2HotkeySettings()
+                                }
+                                .buttonStyle(.bordered)
                             }
-                            .pickerStyle(MenuPickerStyle())
-                            .frame(width: 150)
                         }
                         
-                        Text("+")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 8)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("触发键")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Picker("CT2触发键", selection: $selectedCT2Trigger) {
-                                ForEach(TriggerKey.allCases, id: \.self) { key in
-                                    Text(key.displayName).tag(key)
+                        HStack(spacing: 20) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(LocalizedStrings.modifierKey)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                
+                                Picker("CT2" + LocalizedStrings.modifierKey, selection: $selectedCT2Modifier) {
+                                    ForEach(ModifierKey.allCases, id: \.self) { key in
+                                        Text(key.displayName).tag(key)
+                                    }
                                 }
+                                .pickerStyle(MenuPickerStyle())
+                                .frame(maxWidth: .infinity)
                             }
-                            .pickerStyle(MenuPickerStyle())
-                            .frame(width: 150)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(spacing: 8) {
-                            Button("应用") {
-                                applyCT2HotkeySettings()
-                            }
-                            .buttonStyle(.borderedProminent)
+                            .frame(maxWidth: .infinity)
                             
-                            Button("重置") {
-                                resetCT2HotkeySettings()
+                            Text("+")
+                                .font(.title2)
+                                .foregroundColor(.secondary)
+                                .frame(width: 20)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(LocalizedStrings.triggerKey)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                
+                                Picker("CT2" + LocalizedStrings.triggerKey, selection: $selectedCT2Trigger) {
+                                    ForEach(TriggerKey.allCases, id: \.self) { key in
+                                        Text(key.displayName).tag(key)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                                .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
                         }
                     }
                     .padding()
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                     
-                    Text("当前CT2快捷键: \(selectedCT2Modifier.displayName) + \(selectedCT2Trigger.displayName)")
+                    Text("\(LocalizedStrings.currentCT2Hotkey): \(selectedCT2Modifier.displayName) + \(selectedCT2Trigger.displayName)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
-                    Text("CT2功能已禁用")
+                    Text(LocalizedStrings.ct2FunctionDisabled)
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding()
@@ -264,10 +308,10 @@ struct CoreSettingsView: View {
             // 窗口标题配置
             WindowTitleConfigView()
         }
-        .alert("快捷键冲突", isPresented: $showingHotkeyWarning) {
-            Button("确定", role: .cancel) { }
+        .alert(LocalizedStrings.hotkeyConflictTitle, isPresented: $showingHotkeyWarning) {
+            Button(LocalizedStrings.confirm, role: .cancel) { }
         } message: {
-            Text("该快捷键可能与系统或其他应用冲突，请选择其他组合。")
+            Text(LocalizedStrings.hotkeyConflictMessage)
         }
     }
     
@@ -319,37 +363,54 @@ struct WindowTitleConfigView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("窗口标题配置")
+            Text(LocalizedStrings.windowTitleConfig)
                 .font(.title3)
                 .fontWeight(.semibold)
             
             // 默认策略设置
             VStack(alignment: .leading, spacing: 12) {
-                Text("默认提取策略")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                HStack {
-                    Picker("默认策略", selection: $selectedDefaultStrategy) {
-                        ForEach(TitleExtractionStrategy.allCases, id: \.self) { strategy in
-                            Text(strategy.displayName).tag(strategy)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        
+                        Button(LocalizedStrings.apply) {
+                            settingsManager.updateDefaultTitleStrategy(selectedDefaultStrategy, customSeparator: defaultCustomSeparator)
                         }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(width: 200)
-                    
-                    if selectedDefaultStrategy == .customSeparator {
-                        TextField("自定义分隔符", text: $defaultCustomSeparator)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 100)
+                        .buttonStyle(.borderedProminent)
                     }
                     
-                    Spacer()
-                    
-                    Button("应用") {
-                        settingsManager.updateDefaultTitleStrategy(selectedDefaultStrategy, customSeparator: defaultCustomSeparator)
+                    HStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(LocalizedStrings.defaultExtractionStrategy)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Picker(LocalizedStrings.defaultExtractionStrategy, selection: $selectedDefaultStrategy) {
+                                ForEach(TitleExtractionStrategy.allCases, id: \.self) { strategy in
+                                    Text(strategy.displayName).tag(strategy)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(maxWidth: .infinity)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(selectedDefaultStrategy == .customSeparator ? LocalizedStrings.customSeparator : "")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            if selectedDefaultStrategy == .customSeparator {
+                                TextField(LocalizedStrings.customSeparator, text: $defaultCustomSeparator)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Spacer()
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
                 .padding()
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -358,20 +419,20 @@ struct WindowTitleConfigView: View {
             // 应用特定配置
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("应用特定配置")
+                    Text(LocalizedStrings.appSpecificConfig)
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
                     Spacer()
                     
-                    Button("添加应用") {
+                    Button(LocalizedStrings.addApp) {
                         showingAddAppDialog = true
                     }
                     .buttonStyle(.borderedProminent)
                 }
                 
                 if settingsManager.settings.appTitleConfigs.isEmpty {
-                    Text("暂无应用特定配置")
+                    Text(LocalizedStrings.noAppConfigs)
                         .foregroundColor(.secondary)
                         .italic()
                         .padding()
@@ -428,14 +489,14 @@ struct AppConfigRowView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text("策略: \(config.strategy.displayName)")
+                Text("\(LocalizedStrings.strategy): \(config.strategy.displayName)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             
             Spacer()
             
-            Button("删除") {
+            Button(LocalizedStrings.delete) {
                 onDelete()
             }
             .buttonStyle(.bordered)
@@ -456,24 +517,24 @@ struct AddAppConfigView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("添加应用配置")
+            Text(LocalizedStrings.addAppConfig)
                 .font(.title2)
                 .fontWeight(.semibold)
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("Bundle ID")
+                Text(LocalizedStrings.bundleId)
                     .font(.subheadline)
-                TextField("例如: com.apple.dt.Xcode", text: $bundleId)
+                TextField(LocalizedStrings.bundleIdPlaceholder, text: $bundleId)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
-                Text("应用名称")
+                Text(LocalizedStrings.appName)
                     .font(.subheadline)
-                TextField("例如: Xcode", text: $appName)
+                TextField(LocalizedStrings.appNamePlaceholder, text: $appName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
-                Text("提取策略")
+                Text(LocalizedStrings.extractionStrategy)
                     .font(.subheadline)
-                Picker("策略", selection: $strategy) {
+                Picker(LocalizedStrings.strategy, selection: $strategy) {
                     ForEach(TitleExtractionStrategy.allCases, id: \.self) { strategy in
                         Text(strategy.displayName).tag(strategy)
                     }
@@ -481,22 +542,22 @@ struct AddAppConfigView: View {
                 .pickerStyle(MenuPickerStyle())
                 
                 if strategy == .customSeparator {
-                    Text("自定义分隔符")
+                    Text(LocalizedStrings.customSeparator)
                         .font(.subheadline)
-                    TextField("例如:  - ", text: $customSeparator)
+                    TextField(LocalizedStrings.customSeparatorPlaceholder, text: $customSeparator)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
             }
             
             HStack {
-                Button("取消") {
+                Button(LocalizedStrings.cancel) {
                     dismiss()
                 }
                 .buttonStyle(.bordered)
                 
                 Spacer()
                 
-                Button("保存") {
+                Button(LocalizedStrings.save) {
                     onSave()
                 }
                 .buttonStyle(.borderedProminent)
@@ -522,7 +583,7 @@ struct AboutView: View {
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("版本 2.0.0")
+                    Text(LocalizedStrings.version)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -531,23 +592,23 @@ struct AboutView: View {
             Divider()
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("关于此应用")
+                Text(LocalizedStrings.aboutApp)
                     .font(.headline)
                 
-                Text("DevSwitcher2 是一个高效的 macOS 窗口切换工具，帮助您快速在同一应用的不同窗口之间切换。")
+                Text(LocalizedStrings.appDescription)
                     .font(.body)
                     .foregroundColor(.secondary)
                 
-                Text("主要功能:")
+                Text(LocalizedStrings.mainFeatures)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .padding(.top, 8)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("• 快速窗口切换")
-                    Text("• 自定义快捷键")
-                    Text("• 智能标题识别")
-                    Text("• 多应用支持")
+                    Text(LocalizedStrings.feature1)
+                    Text(LocalizedStrings.feature2)
+                    Text(LocalizedStrings.feature3)
+                    Text(LocalizedStrings.feature4)
                 }
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -556,10 +617,10 @@ struct AboutView: View {
             Divider()
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("开发信息")
+                Text(LocalizedStrings.developmentInfo)
                     .font(.headline)
                 
-                Text("© 2025 DevSwitcher2. All rights reserved.")
+                Text(LocalizedStrings.copyright)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

@@ -6,30 +6,131 @@
   
 */
 
-// DS2窗口切换器界面
+// MARK: - Language Settings
+"language" = "Language";
+"language_system" = "Follow System";
+"language_english" = "English";
+"language_chinese" = "简体中文";
+"language_restart_hint" = "Changes take effect after restarting the application";
+
+// MARK: - DS2 Window Switcher Interface
 "window_switcher_title" = "Select Window";
 "hotkey_hint_template" = "%@ + %@ to switch";
 "cancel_hint" = "ESC to cancel";
 "select_hint" = "Enter to select";
 
-// CT2应用切换器界面
+// MARK: - CT2 Application Switcher Interface
 "app_switcher_title" = "Application Switcher";
 "ct2_hotkey_hint_template" = "Hold %@ to continue switching";
 "ct2_cancel_hint" = "ESC to cancel";
 "ct2_select_hint" = "Release modifier key to activate";
 
-// 应用项显示
+// MARK: - Application Item Display
 "single_window" = "1 window";
 "multiple_windows" = "%d windows";
 
-// 状态栏
+// MARK: - Status Bar
 "status_item_tooltip" = "DevSwitcher2 - Enhanced Window Switching";
 
-// 权限提示
+// MARK: - Permission Prompts
 "accessibility_permission_required" = "DevSwitcher2 needs Accessibility permissions to function properly.";
 "open_system_preferences" = "Open System Preferences";
+"accessibility_permission_title" = "Accessibility Permission Required";
+"accessibility_permission_message" = "DevSwitcher2 needs Accessibility permissions to get and switch application windows. Please enable DevSwitcher2 in System Preferences > Security & Privacy > Accessibility.";
+"open_system_preferences_button" = "Open System Preferences";
+"setup_later" = "Set Up Later";
+"accessibility_permission_granted" = "Accessibility permission granted";
 
-// 错误信息
+// MARK: - Error Messages
 "no_windows_found" = "No windows found for the current application";
 "hotkey_registration_failed" = "Failed to register hotkey";
-"hotkey_registration_success" = "Successfully registered Command + ` hotkey"; 
+"hotkey_registration_success" = "Successfully registered Command + ` hotkey";
+"hotkey_conflict_title" = "Hotkey Conflict";
+"hotkey_conflict_message" = "This hotkey may conflict with system or other applications. Please choose a different combination.";
+"confirm" = "OK";
+
+// MARK: - Menu Bar
+"preferences" = "Preferences";
+"quit_app" = "Quit DevSwitcher2";
+
+// MARK: - Preferences
+"preferences_title" = "Preferences";
+"core_settings" = "Core Features";
+"about" = "About";
+"hotkey_settings" = "Hotkey Settings";
+"window_title_config" = "Window Title Configuration";
+"modifier_key" = "Modifier Key";
+"trigger_key" = "Trigger Key";
+"apply" = "Apply";
+"reset" = "Reset";
+"configuration" = "Configuration";
+"current_hotkey" = "Current Hotkey";
+
+// MARK: - DS2 Settings
+"ds2_same_app_window_switching" = "Multi-window switcher within the same app";
+"current_ds2_hotkey" = "Current Hotkey";
+
+// MARK: - CT2 Settings
+"ct2_app_switcher" = "Application Switcher";
+"enable_ct2" = "Enable";
+"current_ct2_hotkey" = "Current Hotkey";
+"ct2_function_disabled" = "Application Switcher is disabled";
+
+// MARK: - Modifier Keys
+"modifier_command" = "Command ⌘";
+"modifier_option" = "Option ⌥";
+"modifier_control" = "Control ⌃";
+"modifier_function" = "Function fn";
+
+// MARK: - Trigger Keys
+"trigger_grave" = "Grave `";
+"trigger_tab" = "Tab";
+"trigger_space" = "Space";
+"trigger_semicolon" = "Semicolon ;";
+"trigger_quote" = "Quote '";
+"trigger_comma" = "Comma ,";
+"trigger_period" = "Period .";
+"trigger_slash" = "Slash /";
+"trigger_backslash" = "Backslash \\";
+"trigger_left_bracket" = "Left Bracket [";
+"trigger_right_bracket" = "Right Bracket ]";
+
+// MARK: - Window Title Configuration
+"default_extraction_strategy" = "Default Extraction Strategy";
+"app_specific_config" = "App-Specific Configuration";
+"add_app" = "Add Application";
+"no_app_configs" = "No app-specific configurations";
+"strategy" = "Strategy";
+"delete" = "Delete";
+
+// MARK: - Title Extraction Strategies
+"strategy_first_part" = "First Part";
+"strategy_last_part" = "Last Part";
+"strategy_before_first_separator" = "Before First Separator";
+"strategy_after_last_separator" = "After Last Separator";
+"strategy_full_title" = "Full Title";
+"strategy_custom_separator" = "Custom Separator";
+
+// MARK: - Add App Configuration Dialog
+"add_app_config" = "Add Application Configuration";
+"bundle_id" = "Bundle ID";
+"app_name" = "Application Name";
+"extraction_strategy" = "Extraction Strategy";
+"custom_separator" = "Custom Separator";
+"cancel" = "Cancel";
+"save" = "Save";
+"bundle_id_placeholder" = "e.g.: com.apple.dt.Xcode";
+"app_name_placeholder" = "e.g.: Xcode";
+"custom_separator_placeholder" = "e.g.:  - ";
+
+// MARK: - About Page
+"about_app" = "About This Application";
+"version" = "Version 2.0.0";
+"app_description" = "DevSwitcher2 is an efficient macOS window switching tool that helps you quickly switch between different windows of the same application.";
+"main_features" = "Main Features:";
+"feature_1" = "• Fast window switching";
+"feature_2" = "• Customizable hotkeys";
+"feature_3" = "• Smart title recognition";
+"feature_4" = "• Multi-application support";
+"development_info" = "Development Information";
+"copyright" = "© 2025 DevSwitcher2. All rights reserved."; 

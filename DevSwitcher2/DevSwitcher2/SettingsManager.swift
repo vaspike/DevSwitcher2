@@ -19,13 +19,13 @@ enum ModifierKey: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .command:
-            return "Command ⌘"
+            return LocalizedStrings.modifierCommand
         case .option:
-            return "Option ⌥"
+            return LocalizedStrings.modifierOption
         case .control:
-            return "Control ⌃"
+            return LocalizedStrings.modifierControl
         case .function:
-            return "Function fn"
+            return LocalizedStrings.modifierFunction
         }
     }
     
@@ -86,27 +86,27 @@ enum TriggerKey: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .grave:
-            return "反引号 `"
+            return LocalizedStrings.triggerGrave
         case .tab:
-            return "Tab"
+            return LocalizedStrings.triggerTab
         case .space:
-            return "空格"
+            return LocalizedStrings.triggerSpace
         case .semicolon:
-            return "分号 ;"
+            return LocalizedStrings.triggerSemicolon
         case .quote:
-            return "单引号 '"
+            return LocalizedStrings.triggerQuote
         case .comma:
-            return "逗号 ,"
+            return LocalizedStrings.triggerComma
         case .period:
-            return "句号 ."
+            return LocalizedStrings.triggerPeriod
         case .slash:
-            return "斜杠 /"
+            return LocalizedStrings.triggerSlash
         case .backslash:
-            return "反斜杠 \\"
+            return LocalizedStrings.triggerBackslash
         case .leftBracket:
-            return "左中括号 ["
+            return LocalizedStrings.triggerLeftBracket
         case .rightBracket:
-            return "右中括号 ]"
+            return LocalizedStrings.triggerRightBracket
         }
     }
     
@@ -150,17 +150,17 @@ enum TitleExtractionStrategy: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .firstPart:
-            return "第一部分"
+            return LocalizedStrings.strategyFirstPart
         case .lastPart:
-            return "最后部分"
+            return LocalizedStrings.strategyLastPart
         case .beforeFirstSeparator:
-            return "第一个分隔符之前"
+            return LocalizedStrings.strategyBeforeFirstSeparator
         case .afterLastSeparator:
-            return "最后一个分隔符之后"
+            return LocalizedStrings.strategyAfterLastSeparator
         case .fullTitle:
-            return "完整标题"
+            return LocalizedStrings.strategyFullTitle
         case .customSeparator:
-            return "自定义分隔符"
+            return LocalizedStrings.strategyCustomSeparator
         }
     }
 }
@@ -239,7 +239,7 @@ class SettingsManager: ObservableObject {
             do {
                 self.settings = try JSONDecoder().decode(AppSettings.self, from: data)
             } catch {
-                print("设置解码失败，可能是版本不兼容: \(error)")
+                print("Settings decoding failed, possibly due to version incompatibility: \(error)")
                 // 尝试迁移旧版本设置
                 self.settings = Self.migrateOldSettings() ?? AppSettings.default
                 saveSettings()
@@ -261,16 +261,16 @@ class SettingsManager: ObservableObject {
         // 可以在这里添加从旧版本设置中读取特定值的逻辑
         // 例如：if let oldModifier = UserDefaults.standard.string(forKey: "oldModifierKey") { ... }
         
-        print("使用默认设置并启用CT2功能")
+        print("Using default settings with CT2 functionality enabled")
         return migratedSettings
     }
     
     func saveSettings() {
         if let data = try? JSONEncoder().encode(settings) {
             userDefaults.set(data, forKey: settingsKey)
-            print("设置已保存")
+            print("Settings saved")
         } else {
-            print("设置保存失败")
+            print("Failed to save settings")
         }
     }
     

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import AppKit
 
 // MARK: - 切换器类型枚举
 enum SwitcherType {
@@ -23,6 +24,23 @@ protocol SwitcherConfig {
     var selectHint: String { get }
 }
 
+// MARK: - 应用信息数据结构
+struct AppInfo {
+    let bundleId: String
+    let processID: pid_t
+    let appName: String
+    let firstWindow: WindowInfo?  // 该应用的第一个窗口
+    let windowCount: Int         // 该应用的窗口总数
+    
+    init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo]) {
+        self.bundleId = bundleId
+        self.processID = processID
+        self.appName = appName
+        self.firstWindow = windows.first
+        self.windowCount = windows.count
+    }
+}
+
 // MARK: - DS2配置
 struct DS2Config: SwitcherConfig {
     let type: SwitcherType = .ds2
@@ -30,6 +48,15 @@ struct DS2Config: SwitcherConfig {
     let hotkeyHint: String = LocalizedStrings.hotkeyHint
     let cancelHint: String = LocalizedStrings.cancelHint
     let selectHint: String = LocalizedStrings.selectHint
+}
+
+// MARK: - CT2配置
+struct CT2Config: SwitcherConfig {
+    let type: SwitcherType = .ct2
+    let title: String = "应用切换器"
+    let hotkeyHint: String = "按住修饰键继续切换"
+    let cancelHint: String = "ESC 取消"
+    let selectHint: String = "释放修饰键激活"
 }
 
 // MARK: - 通用切换器视图
@@ -192,6 +219,63 @@ struct WindowItemContentView: View {
     }
 }
 
+// MARK: - 应用项内容视图
+struct AppItemContentView: View {
+    let app: AppInfo
+    let isSelected: Bool
+    let isHovered: Bool
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // 应用图标
+            AppIconView(processID: app.processID)
+                .frame(width: 48, height: 48)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                // 应用名称（主要显示）
+                Text(app.appName)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // 窗口数量信息
+                if app.windowCount > 1 {
+                    Text("\(app.windowCount) 个窗口")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("1 个窗口")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                
+                // 如果有第一个窗口，显示其标题作为辅助信息
+                if let firstWindow = app.firstWindow, !firstWindow.projectName.isEmpty {
+                    Text(firstWindow.projectName)
+                        .font(.caption)
+                        .foregroundColor(.secondary.opacity(0.7))
+                        .lineLimit(1)
+                }
+            }
+            
+            Spacer()
+            
+            // 选中指示器
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.accentColor)
+                    .font(.title3)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+}
+
 // MARK: - DS2切换器视图（使用通用组件）
 struct DS2SwitcherView: View {
     @ObservedObject var windowManager: WindowManager
@@ -208,6 +292,31 @@ struct DS2SwitcherView: View {
                 AnyView(
                     WindowItemContentView(
                         window: window,
+                        isSelected: isSelected,
+                        isHovered: isHovered
+                    )
+                )
+            }
+        )
+    }
+}
+
+// MARK: - CT2切换器视图（使用通用组件）
+struct CT2SwitcherView: View {
+    @ObservedObject var windowManager: WindowManager
+    
+    var body: some View {
+        BaseSwitcherView(
+            config: CT2Config(),
+            items: windowManager.apps,
+            currentIndex: windowManager.currentAppIndex,
+            onItemSelect: { index in
+                windowManager.selectApp(at: index)
+            },
+            itemContentBuilder: { app, isSelected, isHovered in
+                AnyView(
+                    AppItemContentView(
+                        app: app,
                         isSelected: isSelected,
                         isHovered: isHovered
                     )

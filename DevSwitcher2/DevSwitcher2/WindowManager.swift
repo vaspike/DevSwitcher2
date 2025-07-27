@@ -25,6 +25,11 @@ class WindowManager: ObservableObject {
     @Published var isShowingSwitcher = false
     @Published var currentWindowIndex = 0
     
+    // CT2相关属性
+    @Published var apps: [AppInfo] = []
+    @Published var isShowingAppSwitcher = false
+    @Published var currentAppIndex = 0
+    
     private var switcherWindow: NSWindow?
     private var eventMonitor: Any?
     private var globalEventMonitor: Any?
@@ -96,6 +101,10 @@ class WindowManager: ObservableObject {
         // 暂时禁用全局热键，避免冲突
         hotkeyManager?.temporarilyDisableHotkey()
         
+        // 确保切换器窗口内容为DS2视图
+        let contentView = WindowSwitcherView(windowManager: self)
+        switcherWindow?.contentView = NSHostingView(rootView: contentView)
+        
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate()
@@ -136,6 +145,75 @@ class WindowManager: ObservableObject {
         // 激活选中的窗口
         if currentWindowIndex < windows.count {
             activateWindow(windows[currentWindowIndex])
+        }
+    }
+    
+    // MARK: - CT2功能：应用切换器显示和隐藏
+    func showAppSwitcher() {
+        guard !isShowingAppSwitcher else { return }
+        
+        // 清除应用图标缓存，确保图标信息最新
+        AppIconCache.shared.clearCache()
+        
+        // 获取所有应用的窗口信息
+        getAllAppsWithWindows()
+        
+        if apps.isEmpty {
+            print("没有找到有窗口的应用")
+            return
+        }
+        
+        isShowingAppSwitcher = true
+        // 默认选中第二个应用（跳过当前应用）
+        currentAppIndex = apps.count > 1 ? 1 : 0
+        
+        // 暂时禁用全局热键，避免冲突
+        hotkeyManager?.temporarilyDisableHotkey()
+        
+        // 更新切换器窗口内容为CT2视图
+        let contentView = CT2SwitcherView(windowManager: self)
+        switcherWindow?.contentView = NSHostingView(rootView: contentView)
+        
+        // 显示切换器窗口
+        switcherWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+        
+        // 监听键盘事件（包括修饰键变化）
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
+            return self?.handleAppSwitcherKeyEvent(event)
+        }
+        
+        // 添加全局事件监听器以监听修饰键变化（检测Command键释放）
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
+            self?.handleAppSwitcherGlobalKeyEvent(event)
+        }
+    }
+    
+    func hideAppSwitcher() {
+        guard isShowingAppSwitcher else { return }
+        
+        isShowingAppSwitcher = false
+        switcherWindow?.orderOut(nil)
+        
+        // 正确移除事件监听器
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        if let globalMonitor = globalEventMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+            globalEventMonitor = nil
+        }
+        
+        // 重新启用全局热键
+        hotkeyManager?.reEnableHotkey()
+        
+        // 清除应用图标缓存
+        AppIconCache.shared.clearCache()
+        
+        // 激活选中的应用（激活其第一个窗口）
+        if currentAppIndex < apps.count, let firstWindow = apps[currentAppIndex].firstWindow {
+            activateWindow(firstWindow)
         }
     }
     
@@ -201,6 +279,69 @@ class WindowManager: ObservableObject {
         }
     }
     
+    // MARK: - CT2功能：应用切换器键盘事件处理
+    private func handleAppSwitcherKeyEvent(_ event: NSEvent) -> NSEvent? {
+        guard isShowingAppSwitcher else { return event }
+        
+        // ESC键关闭切换器
+        if event.type == .keyUp && event.keyCode == 53 { // ESC key
+            hideAppSwitcher()
+            return nil
+        }
+        
+        // 处理触发键 - 使用CT2的设置
+        let settings = settingsManager.settings
+        if event.keyCode == UInt16(settings.ct2TriggerKey.keyCode) {
+            if event.type == .keyDown {
+                // 触发键按下：检查修饰键是否还在按下状态
+                if event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
+                    // 检查是否同时按下shift键
+                    let isShiftPressed = event.modifierFlags.contains(.shift)
+                    
+                    if isShiftPressed {
+                        print("🟢 CT2已显示，检测到\(settings.ct2TriggerKey.displayName)键且\(settings.ct2ModifierKey.displayName)+Shift键按下，当前索引: \(currentAppIndex), 应用总数: \(apps.count)")
+                        moveToPreviousApp()
+                        print("🟢 反向切换后索引: \(currentAppIndex)")
+                    } else {
+                        print("🟢 CT2已显示，检测到\(settings.ct2TriggerKey.displayName)键且\(settings.ct2ModifierKey.displayName)键按下，当前索引: \(currentAppIndex), 应用总数: \(apps.count)")
+                        moveToNextApp()
+                        print("🟢 切换后索引: \(currentAppIndex)")
+                    }
+                    return nil // 阻止事件传递，避免触发全局热键
+                }
+            }
+            return event
+        }
+        
+        // 检测修饰键松开 - 使用CT2的设置
+        if event.type == .flagsChanged {
+            let settings = settingsManager.settings
+            // 修饰键被松开（modifierFlags不再包含对应修饰键）
+            if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
+                print("🔴 检测到\(settings.ct2ModifierKey.displayName)键松开，隐藏应用切换器")
+                hideAppSwitcher()
+                return nil
+            }
+        }
+        
+        return event
+    }
+    
+    private func handleAppSwitcherGlobalKeyEvent(_ event: NSEvent) {
+        guard isShowingAppSwitcher else { return }
+        
+        // 只处理修饰键变化，检测修饰键松开 - 使用CT2的设置
+        if event.type == .flagsChanged {
+            let settings = settingsManager.settings
+            if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
+                print("🌍 全局事件: 检测到\(settings.ct2ModifierKey.displayName)键松开，隐藏应用切换器")
+                DispatchQueue.main.async {
+                    self.hideAppSwitcher()
+                }
+            }
+        }
+    }
+    
     func moveToNextWindow() {
         guard !windows.isEmpty else { return }
         let oldIndex = currentWindowIndex
@@ -217,6 +358,25 @@ class WindowManager: ObservableObject {
         guard index < windows.count else { return }
         currentWindowIndex = index
         hideSwitcher()
+    }
+    
+    // MARK: - CT2功能：应用切换相关方法
+    func moveToNextApp() {
+        guard !apps.isEmpty else { return }
+        let oldIndex = currentAppIndex
+        currentAppIndex = (currentAppIndex + 1) % apps.count
+        print("🔄 moveToNextApp: \(oldIndex) -> \(currentAppIndex) (总数: \(apps.count))")
+    }
+    
+    func moveToPreviousApp() {
+        guard !apps.isEmpty else { return }
+        currentAppIndex = currentAppIndex > 0 ? currentAppIndex - 1 : apps.count - 1
+    }
+    
+    func selectApp(at index: Int) {
+        guard index < apps.count else { return }
+        currentAppIndex = index
+        hideAppSwitcher()
     }
     
     private func getCurrentAppWindows() {
@@ -364,6 +524,141 @@ class WindowManager: ObservableObject {
          print("   有效窗口: \(validWindows.count)")
          print("   最终添加窗口: \(windows.count)")
          print("=== 调试信息结束 ===\n")
+     }
+     
+     // MARK: - CT2功能：获取所有应用的窗口信息
+     private func getAllAppsWithWindows() {
+         apps.removeAll()
+         axElementCache.removeAll() // 清空AX元素缓存
+         
+         print("\n=== CT2调试信息开始 ===")
+         
+         // 获取所有运行的应用
+         let allApps = NSWorkspace.shared.runningApplications
+         print("所有运行的应用总数: \(allApps.count)")
+         
+         // 获取所有窗口
+         let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+         print("系统总共找到 \(windowList.count) 个窗口")
+         
+         // 按应用组织窗口
+         var appWindows: [pid_t: [WindowInfo]] = [:]
+         var appInfoMap: [pid_t: (bundleId: String, appName: String)] = [:]
+         
+         // 首先建立processID到应用信息的映射
+         for app in allApps {
+             // 跳过没有用户界面的应用和当前应用
+             guard app.activationPolicy == .regular,
+                   app.bundleIdentifier != Bundle.main.bundleIdentifier else {
+                 continue
+             }
+             
+             appInfoMap[app.processIdentifier] = (
+                 bundleId: app.bundleIdentifier ?? "unknown",
+                 appName: app.localizedName ?? "Unknown App"
+             )
+         }
+         
+         print("有效应用数量: \(appInfoMap.count)")
+         
+         // 处理所有窗口，按应用分组
+         var windowCounter = 1
+         for windowInfo in windowList {
+             guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
+                   let appInfo = appInfoMap[processID] else {
+                 continue
+             }
+             
+             let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+             let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+             let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
+             let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+             
+             // 检查过滤条件
+             let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
+             let hasValidLayer = layer >= 0
+             let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
+             let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
+             let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
+             let hasReasonableSize = width > 100 && height > 100
+             
+             if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                 // 获取当前应用的窗口数量，用于确定AX窗口索引
+                 let currentAppWindowCount = appWindows[processID]?.count ?? 0
+                 
+                 // 通过AX API获取窗口标题
+                 let (axTitle, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentAppWindowCount)
+                 
+                 let displayTitle: String
+                 let projectName: String
+                 
+                 if !axTitle.isEmpty {
+                     displayTitle = axTitle
+                     projectName = settingsManager.extractProjectName(
+                         from: axTitle,
+                         bundleId: appInfo.bundleId,
+                         appName: appInfo.appName
+                     )
+                 } else if !windowTitle.isEmpty {
+                     displayTitle = windowTitle
+                     projectName = settingsManager.extractProjectName(
+                         from: windowTitle,
+                         bundleId: appInfo.bundleId,
+                         appName: appInfo.appName
+                     )
+                 } else {
+                     displayTitle = "\(appInfo.appName) 窗口 \(windowCounter)"
+                     projectName = displayTitle
+                     windowCounter += 1
+                 }
+                 
+                 // 缓存AXUIElement
+                 if let element = axElement {
+                     axElementCache[windowID] = element
+                 }
+                 
+                 let window = WindowInfo(
+                     windowID: windowID,
+                     title: displayTitle,
+                     projectName: projectName,
+                     appName: appInfo.appName,
+                     processID: processID,
+                     axWindowIndex: currentAppWindowCount
+                 )
+                 
+                 // 添加到该应用的窗口列表
+                 if appWindows[processID] == nil {
+                     appWindows[processID] = []
+                 }
+                 appWindows[processID]?.append(window)
+             }
+         }
+         
+         // 创建AppInfo对象
+         for (processID, windows) in appWindows {
+             guard let appInfo = appInfoMap[processID], !windows.isEmpty else {
+                 continue
+             }
+             
+             let app = AppInfo(
+                 bundleId: appInfo.bundleId,
+                 processID: processID,
+                 appName: appInfo.appName,
+                 windows: windows
+             )
+             
+             apps.append(app)
+         }
+         
+         // 按应用名称排序，确保切换顺序一致
+         apps.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+         
+         print("📊 CT2统计结果:")
+         print("   有效应用数量: \(apps.count)")
+         for app in apps {
+             print("   - \(app.appName): \(app.windowCount) 个窗口")
+         }
+         print("=== CT2调试信息结束 ===\n")
      }
      
      // 通过 AX API 获取特定窗口ID对应的标题和AXUIElement

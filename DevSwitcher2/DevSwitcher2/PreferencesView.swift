@@ -97,17 +97,25 @@ struct CoreSettingsView: View {
     @State private var selectedTrigger: TriggerKey
     @State private var showingHotkeyWarning = false
     
+    // CT2设置状态
+    @State private var ct2Enabled: Bool
+    @State private var selectedCT2Modifier: ModifierKey
+    @State private var selectedCT2Trigger: TriggerKey
+    
     init() {
         let settings = SettingsManager.shared.settings
         _selectedModifier = State(initialValue: settings.modifierKey)
         _selectedTrigger = State(initialValue: settings.triggerKey)
+        _ct2Enabled = State(initialValue: settings.ct2Enabled)
+        _selectedCT2Modifier = State(initialValue: settings.ct2ModifierKey)
+        _selectedCT2Trigger = State(initialValue: settings.ct2TriggerKey)
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            // 快捷键设置
+            // DS2快捷键设置
             VStack(alignment: .leading, spacing: 16) {
-                Text("快捷键设置")
+                Text("DS2 - 同应用窗口切换")
                     .font(.title3)
                     .fontWeight(.semibold)
                 
@@ -149,12 +157,12 @@ struct CoreSettingsView: View {
                     
                     VStack(spacing: 8) {
                         Button("应用") {
-                            applyHotkeySettings()
+                            applyDS2HotkeySettings()
                         }
                         .buttonStyle(.borderedProminent)
                         
                         Button("重置") {
-                            resetHotkeySettings()
+                            resetDS2HotkeySettings()
                         }
                         .buttonStyle(.bordered)
                     }
@@ -162,9 +170,93 @@ struct CoreSettingsView: View {
                 .padding()
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 
-                Text("当前快捷键: \(selectedModifier.displayName) + \(selectedTrigger.displayName)")
+                Text("当前DS2快捷键: \(selectedModifier.displayName) + \(selectedTrigger.displayName)")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+            
+            Divider()
+            
+            // CT2快捷键设置
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("CT2 - 应用切换器")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Toggle("启用CT2", isOn: $ct2Enabled)
+                        .toggleStyle(SwitchToggleStyle())
+                        .onChange(of: ct2Enabled) { newValue in
+                            // 实时更新CT2启用状态
+                            settingsManager.updateCT2Enabled(newValue)
+                            NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
+                        }
+                }
+                
+                if ct2Enabled {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("修饰键")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Picker("CT2修饰键", selection: $selectedCT2Modifier) {
+                                ForEach(ModifierKey.allCases, id: \.self) { key in
+                                    Text(key.displayName).tag(key)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 150)
+                        }
+                        
+                        Text("+")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("触发键")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Picker("CT2触发键", selection: $selectedCT2Trigger) {
+                                ForEach(TriggerKey.allCases, id: \.self) { key in
+                                    Text(key.displayName).tag(key)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 150)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 8) {
+                            Button("应用") {
+                                applyCT2HotkeySettings()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            
+                            Button("重置") {
+                                resetCT2HotkeySettings()
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                    .padding()
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    
+                    Text("当前CT2快捷键: \(selectedCT2Modifier.displayName) + \(selectedCT2Trigger.displayName)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("CT2功能已禁用")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
             }
             
             Divider()
@@ -179,16 +271,32 @@ struct CoreSettingsView: View {
         }
     }
     
-    private func applyHotkeySettings() {
+    // DS2热键设置方法
+    private func applyDS2HotkeySettings() {
         settingsManager.updateHotkey(modifier: selectedModifier, trigger: selectedTrigger)
         // 通知系统重新注册热键
         NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
     }
     
-    private func resetHotkeySettings() {
+    private func resetDS2HotkeySettings() {
         selectedModifier = .command
         selectedTrigger = .grave
-        applyHotkeySettings()
+        applyDS2HotkeySettings()
+    }
+    
+    // CT2热键设置方法
+    private func applyCT2HotkeySettings() {
+        settingsManager.updateCT2Enabled(ct2Enabled)
+        settingsManager.updateCT2Hotkey(modifier: selectedCT2Modifier, trigger: selectedCT2Trigger)
+        // 通知系统重新注册热键
+        NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
+    }
+    
+    private func resetCT2HotkeySettings() {
+        ct2Enabled = true
+        selectedCT2Modifier = .command
+        selectedCT2Trigger = .tab
+        applyCT2HotkeySettings()
     }
 }
 

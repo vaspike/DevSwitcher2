@@ -175,6 +175,11 @@ struct AppSettings: Codable {
     var defaultTitleStrategy: TitleExtractionStrategy
     var defaultCustomSeparator: String
     
+    // CT2设置
+    var ct2Enabled: Bool
+    var ct2ModifierKey: ModifierKey
+    var ct2TriggerKey: TriggerKey
+    
     static let `default` = AppSettings(
         modifierKey: .command,
         triggerKey: .grave,
@@ -199,7 +204,11 @@ struct AppSettings: Codable {
             )
         ],
         defaultTitleStrategy: .beforeFirstSeparator,
-        defaultCustomSeparator: " - "
+        defaultCustomSeparator: " - ",
+        // CT2默认设置
+        ct2Enabled: true,
+        ct2ModifierKey: .command,
+        ct2TriggerKey: .tab
     )
 }
 
@@ -213,13 +222,34 @@ class SettingsManager: ObservableObject {
     static let shared = SettingsManager()
     
     private init() {
-        if let data = userDefaults.data(forKey: settingsKey),
-           let settings = try? JSONDecoder().decode(AppSettings.self, from: data) {
-            self.settings = settings
+        if let data = userDefaults.data(forKey: settingsKey) {
+            do {
+                self.settings = try JSONDecoder().decode(AppSettings.self, from: data)
+            } catch {
+                print("设置解码失败，可能是版本不兼容: \(error)")
+                // 尝试迁移旧版本设置
+                self.settings = Self.migrateOldSettings() ?? AppSettings.default
+                saveSettings()
+            }
         } else {
             self.settings = AppSettings.default
             saveSettings()
         }
+    }
+    
+    // 迁移旧版本设置的方法
+    private static func migrateOldSettings() -> AppSettings? {
+        // 如果无法解码新版本设置，尝试从UserDefaults中读取已知的旧设置项
+        // 这里可以根据需要添加更多的迁移逻辑
+        
+        // 创建默认设置并保持现有的基本配置
+        let migratedSettings = AppSettings.default
+        
+        // 可以在这里添加从旧版本设置中读取特定值的逻辑
+        // 例如：if let oldModifier = UserDefaults.standard.string(forKey: "oldModifierKey") { ... }
+        
+        print("使用默认设置并启用CT2功能")
+        return migratedSettings
     }
     
     func saveSettings() {
@@ -240,6 +270,18 @@ class SettingsManager: ObservableObject {
     func updateHotkey(modifier: ModifierKey, trigger: TriggerKey) {
         settings.modifierKey = modifier
         settings.triggerKey = trigger
+        saveSettings()
+    }
+    
+    // MARK: - CT2设置
+    func updateCT2Enabled(_ enabled: Bool) {
+        settings.ct2Enabled = enabled
+        saveSettings()
+    }
+    
+    func updateCT2Hotkey(modifier: ModifierKey, trigger: TriggerKey) {
+        settings.ct2ModifierKey = modifier
+        settings.ct2TriggerKey = trigger
         saveSettings()
     }
     

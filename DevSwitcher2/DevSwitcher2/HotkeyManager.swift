@@ -16,6 +16,11 @@ class HotkeyManager {
     private var eventHandler: EventHandlerRef?
     private let settingsManager = SettingsManager.shared
     
+    // CGEventTap相关
+    private var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
+    private var isShowingCT2Switcher = false  // 跟踪CT2切换器是否正在显示
+    
     init(windowManager: WindowManager) {
         self.windowManager = windowManager
         
@@ -30,6 +35,7 @@ class HotkeyManager {
     
     deinit {
         unregisterHotkey()
+        stopEventTap()
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -48,6 +54,11 @@ class HotkeyManager {
         // 注册CT2热键（如果启用）
         if settings.ct2Enabled {
             registerCT2Hotkey()
+            
+            // 如果CT2是Command+Tab，启动EventTap来拦截系统事件
+            if needsEventTapForCT2() {
+                startEventTap()
+            }
         }
     }
     
@@ -134,6 +145,9 @@ class HotkeyManager {
             RemoveEventHandler(eventHandler)
             self.eventHandler = nil
         }
+        
+        // 停止EventTap
+        stopEventTap()
     }
     
     // 暂时禁用热键（当切换器窗口显示时）
@@ -185,6 +199,11 @@ class HotkeyManager {
             } else {
                 print("❌ 重新启用CT2全局热键失败: \(registerResult)")
             }
+            
+            // 如果需要EventTap，重新启动
+            if needsEventTapForCT2() {
+                startEventTap()
+            }
         }
     }
     
@@ -200,5 +219,119 @@ class HotkeyManager {
                 }
             }
         }
+    }
+    
+    // MARK: - CGEventTap实现
+    
+    private func needsEventTapForCT2() -> Bool {
+        let settings = settingsManager.settings
+        // 检查是否为系统保留的热键组合
+        return settings.ct2ModifierKey == .command && settings.ct2TriggerKey == .tab
+    }
+    
+    private func startEventTap() {
+        // 停止现有的EventTap
+        stopEventTap()
+        
+        let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
+        
+        guard let eventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(eventMask),
+            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+                guard let refcon = refcon else { return Unmanaged.passUnretained(event) }
+                let hotkeyManager = Unmanaged<HotkeyManager>.fromOpaque(refcon).takeUnretainedValue()
+                return hotkeyManager.handleEventTap(proxy: proxy, type: type, event: event)
+            },
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) else {
+            print("❌ 无法创建EventTap，可能需要辅助功能权限")
+            return
+        }
+        
+        self.eventTap = eventTap
+        self.runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+        
+        print("✅ EventTap已启动，用于拦截系统Command+Tab")
+    }
+    
+    private func stopEventTap() {
+        if let runLoopSource = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+            self.runLoopSource = nil
+        }
+        
+        if let eventTap = eventTap {
+            CGEvent.tapEnable(tap: eventTap, enable: false)
+            self.eventTap = nil
+            print("🔴 EventTap已停止")
+        }
+    }
+    
+    private func handleEventTap(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        let settings = settingsManager.settings
+        
+        // 检查是否是我们感兴趣的事件
+        if type == .keyDown && settings.ct2Enabled {
+            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            let flags = event.flags
+            
+            // 检查是否匹配CT2热键
+            if keyCode == Int64(settings.ct2TriggerKey.keyCode) &&
+               flags.contains(settings.ct2ModifierKey.cgEventFlags) {
+                
+                // 检查是否按下了Shift键
+                let isShiftPressed = flags.contains(.maskShift)
+                
+                print("🎯 EventTap拦截到CT2热键: \(settings.ct2ModifierKey.displayName) + \(isShiftPressed ? "Shift+" : "")\(settings.ct2TriggerKey.displayName)")
+                
+                // 在主线程执行
+                DispatchQueue.main.async {
+                    if self.isShowingCT2Switcher {
+                        // 如果切换器已经显示，则根据Shift键决定方向
+                        if isShiftPressed {
+                            self.windowManager.selectPreviousApp()
+                        } else {
+                            self.windowManager.selectNextApp()
+                        }
+                    } else {
+                        // 第一次按下，显示切换器
+                        self.isShowingCT2Switcher = true
+                        self.windowManager.showAppSwitcher()
+                    }
+                }
+                
+                // 阻止事件继续传播到系统
+                return nil
+            }
+        } else if type == .flagsChanged {
+            // 监听修饰键释放
+            let flags = event.flags
+            
+            if settings.ct2Enabled && isShowingCT2Switcher {
+                // 检查Command键是否被释放
+                if !flags.contains(settings.ct2ModifierKey.cgEventFlags) {
+                    print("🔄 检测到修饰键释放，激活选中的应用")
+                    
+                    DispatchQueue.main.async {
+                        self.isShowingCT2Switcher = false
+                        self.windowManager.activateSelectedApp()
+                    }
+                }
+            }
+        }
+        
+        // 让其他事件正常传播
+        return Unmanaged.passUnretained(event)
+    }
+    
+    // MARK: - WindowManager状态同步
+    func resetCT2SwitcherState() {
+        isShowingCT2Switcher = false
     }
 } 

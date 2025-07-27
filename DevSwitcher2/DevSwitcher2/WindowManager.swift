@@ -325,6 +325,19 @@ class WindowManager: ObservableObject {
         hideAppSwitcher()
     }
     
+    // MARK: - EventTap支持方法
+    func selectNextApp() {
+        moveToNextApp()
+    }
+    
+    func selectPreviousApp() {
+        moveToPreviousApp()
+    }
+    
+    func activateSelectedApp() {
+        hideAppSwitcher()
+    }
+    
     private func getCurrentAppWindows() {
         windows.removeAll()
         // 不再全量清空AX缓存，让智能清理机制处理
@@ -1317,6 +1330,9 @@ class WindowManager: ObservableObject {
         
         // 立即重新启用全局热键
         hotkeyManager?.reEnableHotkey()
+        
+        // 重置CT2切换器状态同步
+        hotkeyManager?.resetCT2SwitcherState()
         
         // 清除应用图标缓存（在后台线程执行）
         DispatchQueue.global(qos: .utility).async {

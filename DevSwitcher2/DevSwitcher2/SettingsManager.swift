@@ -42,6 +42,19 @@ enum ModifierKey: String, CaseIterable, Codable {
         }
     }
     
+    var cgEventFlags: CGEventFlags {
+        switch self {
+        case .command:
+            return .maskCommand
+        case .option:
+            return .maskAlternate
+        case .control:
+            return .maskControl
+        case .function:
+            return .maskSecondaryFn
+        }
+    }
+    
     var eventModifier: NSEvent.ModifierFlags {
         switch self {
         case .command:

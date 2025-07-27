@@ -154,9 +154,18 @@ class WindowManager: ObservableObject {
             if event.type == .keyDown {
                 // 触发键按下：检查修饰键是否还在按下状态
                 if event.modifierFlags.contains(settings.modifierKey.eventModifier) {
-                    print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
-                    moveToNextWindow()
-                    print("🟢 切换后索引: \(currentWindowIndex)")
+                    // 检查是否同时按下shift键
+                    let isShiftPressed = event.modifierFlags.contains(.shift)
+                    
+                    if isShiftPressed {
+                        print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)+Shift键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
+                        moveToPreviousWindow()
+                        print("🟢 反向切换后索引: \(currentWindowIndex)")
+                    } else {
+                        print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
+                        moveToNextWindow()
+                        print("🟢 切换后索引: \(currentWindowIndex)")
+                    }
                     return nil // 阻止事件传递，避免触发全局热键
                 }
             }

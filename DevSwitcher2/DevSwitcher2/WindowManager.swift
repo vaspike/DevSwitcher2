@@ -344,16 +344,46 @@ class WindowManager: ObservableObject {
             app.isActive && app.bundleIdentifier != Bundle.main.bundleIdentifier
         }
         
-        guard let targetApp = frontmostApp else {
-            print("❌ 无法获取前台应用")
-            return
+        // 获取所有窗口（统一获取，避免重复调用）
+        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        
+        // 如果无法获取前台应用，则使用最前面窗口对应的应用
+        let targetApp: NSRunningApplication
+        if let frontApp = frontmostApp {
+            targetApp = frontApp
+            print("✅ 使用前台应用作为目标应用")
+        } else {
+            print("⚠️ 无法获取前台应用，尝试使用最前面的窗口对应的应用")
+            
+            // 找到第一个有效的可见窗口的应用（排除自己）
+            // windowList已经按z-order排序（最前面的窗口在前）
+            var topWindowApp: NSRunningApplication?
+            for windowInfo in windowList {
+                guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
+                      let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool,
+                      let layer = windowInfo[kCGWindowLayer as String] as? Int else { continue }
+                
+                // 过滤条件：在屏幕上、层级为0（正常窗口）、不是自己的进程
+                if isOnScreen && layer == 0 {
+                    if let app = allApps.first(where: { $0.processIdentifier == processID }),
+                       app.bundleIdentifier != Bundle.main.bundleIdentifier {
+                        topWindowApp = app
+                        print("🔍 找到最前面窗口的应用: \(app.localizedName ?? "Unknown") (PID: \(processID))")
+                        break
+                    }
+                }
+            }
+            
+            guard let foundApp = topWindowApp else {
+                print("❌ 无法获取任何有效的目标应用")
+                return
+            }
+            
+            targetApp = foundApp
         }
         
         print("\n🎯 目标应用: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
         print("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
-        
-        // 获取所有窗口
-        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
         print("\n📋 系统总共找到 \(windowList.count) 个窗口")
         
         // 打印所有窗口信息

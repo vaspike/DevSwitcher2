@@ -124,13 +124,18 @@
 "custom_separator_placeholder" = "e.g.:  - ";
 
 // MARK: - About Page
-"about_app" = "About This Application";
-"version" = "Version 2.0.0";
-"app_description" = "DevSwitcher2 is an efficient macOS window switching tool that helps you quickly switch between different windows of the same application.";
+"about_app" = "About DevSwitcher2";
+"version" = "Version 2.0.1";
+"app_description" = "DevSwitcher2 is a modern macOS productivity tool that enhances your window and application switching experience with dual-mode switching capabilities.";
 "main_features" = "Main Features:";
-"feature_1" = "• Fast window switching";
-"feature_2" = "• Customizable hotkeys";
-"feature_3" = "• Smart title recognition";
-"feature_4" = "• Multi-application support";
+"feature_1" = "• DS2 Mode: Enhanced same-app window switching";
+"feature_2" = "• CT2 Mode: Improved Command+Tab for all apps";
+"feature_3" = "• Smart title extraction with multiple strategies";
+"feature_4" = "• Customizable hotkeys and app-specific rules";
+"feature_5" = "• Multi-display support with intelligent focus transfer";
+"feature_6" = "• Icon caching system for smooth performance";
 "development_info" = "Development Information";
-"copyright" = "© 2025 DevSwitcher2. All rights reserved."; 
+"author" = "Author: River";
+"github" = "GitHub Repository";
+"open_github" = "View on GitHub";
+"copyright" = "© 2025 River. All rights reserved."; 

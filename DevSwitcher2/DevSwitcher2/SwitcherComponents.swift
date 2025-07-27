@@ -80,7 +80,7 @@ struct BaseSwitcherView<ItemType>: View {
     private var headerView: some View {
         HStack {
             Image(systemName: headerIcon)
-                .symbolEffect(.breathe.plain.byLayer, options: .repeat(.continuous))
+//                .symbolEffect(.breathe.plain.byLayer, options: .repeat(.continuous))
                 .foregroundColor(.accentColor)
                 .font(.title2)
             
@@ -147,7 +147,7 @@ struct BaseSwitcherView<ItemType>: View {
         case .ds2:
             return "rectangle.2.swap"
         case .ct2:
-            return "switch.2"
+            return "rectangle.3.group"
         }
     }
     

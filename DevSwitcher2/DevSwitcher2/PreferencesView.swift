@@ -587,6 +587,35 @@ struct AboutView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
+                
+                Spacer()
+                
+                // GitHub按钮
+                Button(action: {
+                    if let url = URL(string: "https://github.com/vaspike/DevSwitcher2") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "globe")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(LocalizedStrings.openGitHub)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue, Color.purple]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .help(LocalizedStrings.gitHub)
             }
             
             Divider()
@@ -598,6 +627,7 @@ struct AboutView: View {
                 Text(LocalizedStrings.appDescription)
                     .font(.body)
                     .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 Text(LocalizedStrings.mainFeatures)
                     .font(.subheadline)
@@ -609,6 +639,8 @@ struct AboutView: View {
                     Text(LocalizedStrings.feature2)
                     Text(LocalizedStrings.feature3)
                     Text(LocalizedStrings.feature4)
+                    Text(LocalizedStrings.feature5)
+                    Text(LocalizedStrings.feature6)
                 }
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -619,6 +651,10 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(LocalizedStrings.developmentInfo)
                     .font(.headline)
+                
+                Text(LocalizedStrings.author)
+                    .font(.body)
+                    .foregroundColor(.secondary)
                 
                 Text(LocalizedStrings.copyright)
                     .font(.caption)

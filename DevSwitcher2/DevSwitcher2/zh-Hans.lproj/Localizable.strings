@@ -124,13 +124,18 @@
 "custom_separator_placeholder" = "例如:  - ";
 
 // MARK: - 关于页面
-"about_app" = "关于此应用";
-"version" = "版本 2.0.0";
-"app_description" = "DevSwitcher2 是一个高效的 macOS 窗口切换工具，帮助您快速在同一应用的不同窗口之间切换。";
+"about_app" = "关于 DevSwitcher2";
+"version" = "版本 2.0.1";
+"app_description" = "DevSwitcher2 是一款现代化的 macOS 生产力工具，通过双模式切换功能增强您的窗口和应用切换体验。";
 "main_features" = "主要功能:";
-"feature_1" = "• 快速窗口切换";
-"feature_2" = "• 自定义快捷键";
-"feature_3" = "• 智能标题识别";
-"feature_4" = "• 多应用支持";
+"feature_1" = "• DS2 模式：增强的同应用窗口切换";
+"feature_2" = "• CT2 模式：改进的全应用 Command+Tab";
+"feature_3" = "• 智能标题提取，支持多种策略";
+"feature_4" = "• 自定义快捷键和应用特定规则";
+"feature_5" = "• 多显示器支持，智能焦点转移";
+"feature_6" = "• 图标缓存系统，流畅性能表现";
 "development_info" = "开发信息";
-"copyright" = "© 2025 DevSwitcher2. 保留所有权利。"; 
+"author" = "作者：River";
+"github" = "GitHub 仓库";
+"open_github" = "在 GitHub 上查看";
+"copyright" = "© 2025 River. 保留所有权利。"; 

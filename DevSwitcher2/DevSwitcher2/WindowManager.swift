@@ -228,7 +228,7 @@ class WindowManager: ObservableObject {
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        NSApp.activateCompat()
         
         // 3. 延迟打印日志，以获取渲染后的真实缓存大小
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -278,7 +278,7 @@ class WindowManager: ObservableObject {
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        NSApp.activateCompat()
         
         // 3. 延迟打印日志，以获取渲染后的真实缓存大小
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in

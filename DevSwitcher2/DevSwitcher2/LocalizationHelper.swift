@@ -222,7 +222,12 @@ struct LocalizedStrings {
     static let feature2 = "feature_2".localized
     static let feature3 = "feature_3".localized
     static let feature4 = "feature_4".localized
+    static let feature5 = "feature_5".localized
+    static let feature6 = "feature_6".localized
     static let developmentInfo = "development_info".localized
+    static let author = "author".localized
+    static let gitHub = "github".localized
+    static let openGitHub = "open_github".localized
     static let copyright = "copyright".localized
 }
 

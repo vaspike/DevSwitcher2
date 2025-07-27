@@ -38,7 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: LocalizedStrings.statusItemTooltip)
+            button.image = NSImage(systemSymbolName: "rectangle.2.swap", accessibilityDescription: LocalizedStrings.statusItemTooltip)
             button.action = #selector(statusBarButtonClicked)
             button.target = self
             button.toolTip = LocalizedStrings.statusItemTooltip
@@ -90,7 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // If the preferences window already exists, bring it to the front
         if let window = preferencesWindow {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate()
+            NSApp.activateCompat()
             return
         }
         
@@ -116,7 +116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         preferencesWindow = window
         window.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        NSApp.activateCompat()
     }
     
     @objc func quitApplication() {

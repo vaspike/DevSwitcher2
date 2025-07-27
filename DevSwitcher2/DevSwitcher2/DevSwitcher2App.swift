@@ -24,6 +24,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var windowManager: WindowManager?
     var hotkeyManager: HotkeyManager?
     var preferencesWindow: NSWindow?
+    var accessibilityCheckTimer: Timer? // 添加Timer引用用于管理
+    
+    deinit {
+        // 清理Timer资源
+        accessibilityCheckTimer?.invalidate()
+        accessibilityCheckTimer = nil
+        print("🗑️ AppDelegate已清理，Timer资源已释放")
+    }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 创建状态栏图标
@@ -138,12 +146,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }
             
             // 定期检查权限状态
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
+            accessibilityCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
                 if AXIsProcessTrusted() {
                     print("辅助功能权限已授予")
                     timer.invalidate()
+                    self?.accessibilityCheckTimer = nil
                     // 权限获得后重新注册热键
-                    self.hotkeyManager?.registerHotkey()
+                    self?.hotkeyManager?.registerHotkey()
                 }
             }
         } else {

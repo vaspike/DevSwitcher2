@@ -34,8 +34,41 @@ class WindowManager: ObservableObject {
     private var eventMonitor: Any?
     private var globalEventMonitor: Any?
     
-    // 缓存窗口ID到AXUIElement的映射
-    private var axElementCache: [CGWindowID: AXUIElement] = [:]
+    // 当前视图类型跟踪
+    private var currentViewType: SwitcherType = .ds2
+    
+    // 事件处理状态管理
+    private var isProcessingKeyEvent = false
+    private var lastModifierEventTime = Date()
+    
+    // 修饰键看门狗机制
+    private var modifierKeyWatchdog: Timer?
+    private let watchdogInterval: TimeInterval = 0.016 // 16ms ≈ 60Hz
+    private var watchdogCallCount = 0
+    private var watchdogPhase = 0
+    private var lastSwitchTime = Date()
+    
+    // AX元素缓存项结构
+    private struct AXCacheItem {
+        let element: AXUIElement
+        let processID: pid_t
+        var lastAccessTime: Date
+        
+        init(element: AXUIElement, processID: pid_t) {
+            self.element = element
+            self.processID = processID
+            self.lastAccessTime = Date()
+        }
+        
+        mutating func updateAccessTime() {
+            self.lastAccessTime = Date()
+        }
+    }
+    
+    // 改进的AX元素缓存，包含更多元数据
+    private var axElementCache: [CGWindowID: AXCacheItem] = [:]
+    private let maxAXCacheSize = 100  // 最大缓存100个AX元素
+    private let axCacheCleanupThreshold = 120  // 达到120个时开始清理
     
     // HotkeyManager的弱引用，避免循环引用
     weak var hotkeyManager: HotkeyManager?
@@ -55,6 +88,95 @@ class WindowManager: ObservableObject {
         if let globalMonitor = globalEventMonitor {
             NSEvent.removeMonitor(globalMonitor)
         }
+        
+        // 清理看门狗定时器
+        stopModifierKeyWatchdog()
+        
+        // 清理AX缓存
+        print("🗑️ WindowManager清理，释放 \(axElementCache.count) 个AX元素")
+        axElementCache.removeAll()
+    }
+    
+    // MARK: - AX缓存管理方法
+    
+    // 智能清理AX缓存
+    private func cleanupAXCache() {
+        guard axElementCache.count >= axCacheCleanupThreshold else { return }
+        
+        print("🧹 开始AX缓存LRU清理，当前大小: \(axElementCache.count)")
+        
+        // 获取当前运行的应用进程ID集合
+        let runningProcesses = Set(NSWorkspace.shared.runningApplications.map { $0.processIdentifier })
+        
+        // 首先移除已终止进程的缓存项
+        var itemsToRemove: [CGWindowID] = []
+        for (windowID, cacheItem) in axElementCache {
+            if !runningProcesses.contains(cacheItem.processID) {
+                itemsToRemove.append(windowID)
+            }
+        }
+        
+        for windowID in itemsToRemove {
+            axElementCache.removeValue(forKey: windowID)
+        }
+        
+        let afterProcessCleanup = axElementCache.count
+        print("🗑️ 移除已终止进程的AX元素: \(itemsToRemove.count) 个")
+        
+        // 如果还是超过限制，执行LRU清理
+        if axElementCache.count > maxAXCacheSize {
+            let sortedEntries = axElementCache.sorted { $0.value.lastAccessTime < $1.value.lastAccessTime }
+            let itemsToKeep = Array(sortedEntries.suffix(maxAXCacheSize))
+            var newCache: [CGWindowID: AXCacheItem] = [:]
+            for (key, value) in itemsToKeep {
+                newCache[key] = value
+            }
+            
+            let lruRemovedCount = axElementCache.count - newCache.count
+            axElementCache = newCache
+            
+            print("🧹 LRU清理完成，移除 \(lruRemovedCount) 个AX元素，当前大小: \(axElementCache.count)")
+        }
+    }
+    
+    // 获取或缓存AX元素
+    private func getCachedAXElement(windowID: CGWindowID, processID: pid_t, windowIndex: Int) -> AXUIElement? {
+        // 检查缓存中是否存在并更新访问时间
+        if var cachedItem = axElementCache[windowID] {
+            cachedItem.updateAccessTime()
+            axElementCache[windowID] = cachedItem
+            return cachedItem.element
+        }
+        
+        // 缓存中没有，获取新的AX元素
+        let (_, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: windowIndex)
+        
+        if let element = axElement {
+            // 在添加到缓存前检查是否需要清理
+            cleanupAXCache()
+            
+            // 添加到缓存
+            axElementCache[windowID] = AXCacheItem(element: element, processID: processID)
+            print("📦 缓存AX元素: WindowID \(windowID), 当前缓存大小: \(axElementCache.count)")
+        }
+        
+        return axElement
+    }
+    
+    // MARK: - 内存优化的视图创建方法
+    
+    // 创建DS2视图
+    private func createDS2HostingView() -> NSHostingView<DS2SwitcherView> {
+        print("🆕 创建DS2 HostingView")
+        let contentView = DS2SwitcherView(windowManager: self)
+        return NSHostingView(rootView: contentView)
+    }
+    
+    // 创建CT2视图
+    private func createCT2HostingView() -> NSHostingView<CT2SwitcherView> {
+        print("🆕 创建CT2 HostingView")
+        let contentView = CT2SwitcherView(windowManager: self)
+        return NSHostingView(rootView: contentView)
     }
     
     private func setupSwitcherWindow() {
@@ -72,9 +194,8 @@ class WindowManager: ObservableObject {
         switcherWindow?.hasShadow = true
         switcherWindow?.isOpaque = false
         
-        // 设置 SwiftUI 内容视图
-        let contentView = WindowSwitcherView(windowManager: self)
-        switcherWindow?.contentView = NSHostingView(rootView: contentView)
+        // 初始内容视图将在首次显示时设置
+        switcherWindow?.contentView = NSView() // 临时空视图
         
         // 居中显示
         switcherWindow?.center()
@@ -102,50 +223,23 @@ class WindowManager: ObservableObject {
         hotkeyManager?.temporarilyDisableHotkey()
         
         // 确保切换器窗口内容为DS2视图
-        let contentView = WindowSwitcherView(windowManager: self)
-        switcherWindow?.contentView = NSHostingView(rootView: contentView)
+        currentViewType = .ds2
+        switcherWindow?.contentView = createDS2HostingView()
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate()
         
-        // 监听键盘事件（包括修饰键变化）
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
-            return self?.handleKeyEvent(event)
-        }
+        // 使用统一的事件处理机制
+        setupUnifiedEventHandling()
         
-        // 添加全局事件监听器以监听修饰键变化（检测Command键释放）
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
-            self?.handleGlobalKeyEvent(event)
-        }
+        // 启动修饰键看门狗机制（DS2）
+        startModifierKeyWatchdog(for: .ds2)
     }
     
     func hideSwitcher() {
-        guard isShowingSwitcher else { return }
-        
-        isShowingSwitcher = false
-        switcherWindow?.orderOut(nil)
-        
-        // 正确移除事件监听器
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-        if let globalMonitor = globalEventMonitor {
-            NSEvent.removeMonitor(globalMonitor)
-            globalEventMonitor = nil
-        }
-        
-        // 重新启用全局热键
-        hotkeyManager?.reEnableHotkey()
-        
-        // 清除应用图标缓存
-        AppIconCache.shared.clearCache()
-        
-        // 激活选中的窗口
-        if currentWindowIndex < windows.count {
-            activateWindow(windows[currentWindowIndex])
-        }
+        // 保持向后兼容，内部调用异步版本
+        hideSwitcherAsync()
     }
     
     // MARK: - CT2功能：应用切换器显示和隐藏
@@ -171,176 +265,28 @@ class WindowManager: ObservableObject {
         hotkeyManager?.temporarilyDisableHotkey()
         
         // 更新切换器窗口内容为CT2视图
-        let contentView = CT2SwitcherView(windowManager: self)
-        switcherWindow?.contentView = NSHostingView(rootView: contentView)
+        currentViewType = .ct2
+        switcherWindow?.contentView = createCT2HostingView()
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate()
         
-        // 监听键盘事件（包括修饰键变化）
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
-            return self?.handleAppSwitcherKeyEvent(event)
-        }
+        // 使用统一的事件处理机制
+        setupUnifiedEventHandling()
         
-        // 添加全局事件监听器以监听修饰键变化（检测Command键释放）
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
-            self?.handleAppSwitcherGlobalKeyEvent(event)
-        }
+        // 启动修饰键看门狗机制（CT2）
+        startModifierKeyWatchdog(for: .ct2)
     }
     
     func hideAppSwitcher() {
-        guard isShowingAppSwitcher else { return }
-        
-        isShowingAppSwitcher = false
-        switcherWindow?.orderOut(nil)
-        
-        // 正确移除事件监听器
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-        if let globalMonitor = globalEventMonitor {
-            NSEvent.removeMonitor(globalMonitor)
-            globalEventMonitor = nil
-        }
-        
-        // 重新启用全局热键
-        hotkeyManager?.reEnableHotkey()
-        
-        // 清除应用图标缓存
-        AppIconCache.shared.clearCache()
-        
-        // 激活选中的应用（激活其第一个窗口）
-        if currentAppIndex < apps.count, let firstWindow = apps[currentAppIndex].firstWindow {
-            activateWindow(firstWindow)
-        }
+        // 保持向后兼容，内部调用异步版本
+        hideAppSwitcherAsync()
     }
     
-    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
-        guard isShowingSwitcher else { return event }
-        
-        // ESC键关闭切换器
-        if event.type == .keyUp && event.keyCode == 53 { // ESC key
-            hideSwitcher()
-            return nil
-        }
-        
-        // 处理触发键
-        let settings = settingsManager.settings
-        if event.keyCode == UInt16(settings.triggerKey.keyCode) {
-            if event.type == .keyDown {
-                // 触发键按下：检查修饰键是否还在按下状态
-                if event.modifierFlags.contains(settings.modifierKey.eventModifier) {
-                    // 检查是否同时按下shift键
-                    let isShiftPressed = event.modifierFlags.contains(.shift)
-                    
-                    if isShiftPressed {
-                        print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)+Shift键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
-                        moveToPreviousWindow()
-                        print("🟢 反向切换后索引: \(currentWindowIndex)")
-                    } else {
-                        print("🟢 DS2已显示，检测到\(settings.triggerKey.displayName)键且\(settings.modifierKey.displayName)键按下，当前索引: \(currentWindowIndex), 窗口总数: \(windows.count)")
-                        moveToNextWindow()
-                        print("🟢 切换后索引: \(currentWindowIndex)")
-                    }
-                    return nil // 阻止事件传递，避免触发全局热键
-                }
-            }
-            return event
-        }
-        
-        // 检测修饰键松开
-        if event.type == .flagsChanged {
-            let settings = settingsManager.settings
-            // 修饰键被松开（modifierFlags不再包含对应修饰键）
-            if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
-                print("🔴 检测到\(settings.modifierKey.displayName)键松开，隐藏切换器")
-                hideSwitcher()
-                return nil
-            }
-        }
-        
-        return event
-    }
+    // 旧的事件处理方法已被统一的事件处理机制替代
     
-    private func handleGlobalKeyEvent(_ event: NSEvent) {
-        guard isShowingSwitcher else { return }
-        
-        // 只处理修饰键变化，检测修饰键松开
-        if event.type == .flagsChanged {
-            let settings = settingsManager.settings
-            if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
-                print("🌍 全局事件: 检测到\(settings.modifierKey.displayName)键松开，隐藏切换器")
-                DispatchQueue.main.async {
-                    self.hideSwitcher()
-                }
-            }
-        }
-    }
-    
-    // MARK: - CT2功能：应用切换器键盘事件处理
-    private func handleAppSwitcherKeyEvent(_ event: NSEvent) -> NSEvent? {
-        guard isShowingAppSwitcher else { return event }
-        
-        // ESC键关闭切换器
-        if event.type == .keyUp && event.keyCode == 53 { // ESC key
-            hideAppSwitcher()
-            return nil
-        }
-        
-        // 处理触发键 - 使用CT2的设置
-        let settings = settingsManager.settings
-        if event.keyCode == UInt16(settings.ct2TriggerKey.keyCode) {
-            if event.type == .keyDown {
-                // 触发键按下：检查修饰键是否还在按下状态
-                if event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
-                    // 检查是否同时按下shift键
-                    let isShiftPressed = event.modifierFlags.contains(.shift)
-                    
-                    if isShiftPressed {
-                        print("🟢 CT2已显示，检测到\(settings.ct2TriggerKey.displayName)键且\(settings.ct2ModifierKey.displayName)+Shift键按下，当前索引: \(currentAppIndex), 应用总数: \(apps.count)")
-                        moveToPreviousApp()
-                        print("🟢 反向切换后索引: \(currentAppIndex)")
-                    } else {
-                        print("🟢 CT2已显示，检测到\(settings.ct2TriggerKey.displayName)键且\(settings.ct2ModifierKey.displayName)键按下，当前索引: \(currentAppIndex), 应用总数: \(apps.count)")
-                        moveToNextApp()
-                        print("🟢 切换后索引: \(currentAppIndex)")
-                    }
-                    return nil // 阻止事件传递，避免触发全局热键
-                }
-            }
-            return event
-        }
-        
-        // 检测修饰键松开 - 使用CT2的设置
-        if event.type == .flagsChanged {
-            let settings = settingsManager.settings
-            // 修饰键被松开（modifierFlags不再包含对应修饰键）
-            if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
-                print("🔴 检测到\(settings.ct2ModifierKey.displayName)键松开，隐藏应用切换器")
-                hideAppSwitcher()
-                return nil
-            }
-        }
-        
-        return event
-    }
-    
-    private func handleAppSwitcherGlobalKeyEvent(_ event: NSEvent) {
-        guard isShowingAppSwitcher else { return }
-        
-        // 只处理修饰键变化，检测修饰键松开 - 使用CT2的设置
-        if event.type == .flagsChanged {
-            let settings = settingsManager.settings
-            if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
-                print("🌍 全局事件: 检测到\(settings.ct2ModifierKey.displayName)键松开，隐藏应用切换器")
-                DispatchQueue.main.async {
-                    self.hideAppSwitcher()
-                }
-            }
-        }
-    }
+    // 旧的CT2事件处理方法已被统一的事件处理机制替代
     
     func moveToNextWindow() {
         guard !windows.isEmpty else { return }
@@ -381,7 +327,7 @@ class WindowManager: ObservableObject {
     
     private func getCurrentAppWindows() {
         windows.removeAll()
-        axElementCache.removeAll() // 清空AX元素缓存
+        // 不再全量清空AX缓存，让智能清理机制处理
         
         // 打印所有运行的应用
         print("\n=== 调试信息开始 ===")
@@ -494,10 +440,7 @@ class WindowManager: ObservableObject {
                          windowCounter += 1
                      }
                      
-                     // 缓存AXUIElement
-                     if let element = axElement {
-                         axElementCache[windowID] = element
-                     }
+                     // AX元素会在getCachedAXElement中自动缓存
                     
                     let window = WindowInfo(
                         windowID: windowID,
@@ -529,7 +472,7 @@ class WindowManager: ObservableObject {
      // MARK: - CT2功能：获取所有应用的窗口信息
      private func getAllAppsWithWindows() {
          apps.removeAll()
-         axElementCache.removeAll() // 清空AX元素缓存
+         // 不再全量清空AX缓存，让智能清理机制处理
          
          print("\n=== CT2调试信息开始 ===")
          
@@ -619,10 +562,7 @@ class WindowManager: ObservableObject {
                      windowCounter += 1
                  }
                  
-                 // 缓存AXUIElement
-                 if let element = axElement {
-                     axElementCache[windowID] = element
-                 }
+                 // AX元素会在getCachedAXElement中自动缓存
                  
                  let window = WindowInfo(
                      windowID: windowID,
@@ -736,43 +676,23 @@ class WindowManager: ObservableObject {
         let windowBounds = getWindowBounds(windowID: window.windowID)
         
         // 首先尝试从缓存中获取AXUIElement
-        if let cachedElement = axElementCache[window.windowID] {
-            print("   ✅ 从缓存中找到AX元素")
+        if let cachedElement = getCachedAXElement(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex) {
+            print("   ✅ 获取到AX元素（缓存或新建）")
             
             // 执行多显示器焦点转移和窗口激活
             if activateWindowWithFocusTransfer(axElement: cachedElement, windowBounds: windowBounds, window: window) {
-                print("   ✅ 窗口激活成功（使用缓存元素）")
+                print("   ✅ 窗口激活成功")
                 return
             } else {
-                print("   ⚠️ 缓存的AX元素激活失败，尝试重新获取")
-                // 从缓存中移除失效的元素
-                axElementCache.removeValue(forKey: window.windowID)
+                print("   ⚠️ AX元素激活失败")
             }
         }
         
-        // 如果缓存中没有或激活失败，重新获取AXUIElement
-        print("   🔍 重新获取AX元素")
-        let (_, axElement) = getAXWindowInfo(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex)
+        print("   ❌ 无法获取窗口ID \(window.windowID) 的AX元素")
         
-        if let element = axElement {
-            print("   ✅ 重新获取AX元素成功")
-            
-            // 更新缓存
-            axElementCache[window.windowID] = element
-            
-            // 执行多显示器焦点转移和窗口激活
-            if activateWindowWithFocusTransfer(axElement: element, windowBounds: windowBounds, window: window) {
-                print("   ✅ 窗口激活成功（重新获取元素）")
-            } else {
-                print("   ❌ 窗口激活失败")
-            }
-        } else {
-            print("   ❌ 无法获取窗口ID \(window.windowID) 的AX元素")
-            
-            // 降级方案2：尝试使用Core Graphics API
-            print("   🔄 尝试最终降级方案")
-            fallbackActivateWindowWithFocusTransfer(window.windowID, processID: window.processID, windowBounds: windowBounds)
-        }
+        // 降级方案：尝试使用Core Graphics API
+        print("   🔄 尝试最终降级方案")
+        fallbackActivateWindowWithFocusTransfer(window.windowID, processID: window.processID, windowBounds: windowBounds)
     }
     
     // MARK: - AX增强的多显示器焦点转移支持
@@ -786,8 +706,8 @@ class WindowManager: ObservableObject {
     
     // AX增强的窗口激活方法（主入口）
     private func activateWindowWithAXEnhanced(_ window: WindowInfo) -> Bool {
-        guard let axElement = axElementCache[window.windowID] else {
-            print("   ❌ AX增强激活失败：缓存中无AX元素")
+        guard let axElement = getCachedAXElement(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex) else {
+            print("   ❌ AX增强激活失败：无法获取AX元素")
             return false
         }
         
@@ -1135,5 +1055,431 @@ class WindowManager: ObservableObject {
         // 注意：Core Graphics没有直接激活特定窗口的API
         // 这里只能激活应用，让它自己决定显示哪个窗口
         print("   ⚠️ 使用降级方案，只能激活应用，无法精确控制窗口")
+    }
+    
+    // MARK: - 增强事件处理机制 (方案3)
+    
+    /// 设置统一的事件处理机制，减少事件冲突
+    private func setupUnifiedEventHandling() {
+        // 清理现有监听器
+        cleanupEventMonitors()
+        
+        // 设置本地事件监听器 - 处理所有类型的事件
+        eventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown, .keyUp, .flagsChanged]
+        ) { [weak self] event in
+            return self?.handleUnifiedKeyEvent(event, isGlobal: false)
+        }
+        
+        // 设置全局事件监听器 - 主要用于监听修饰键变化
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.flagsChanged, .keyDown, .keyUp]
+        ) { [weak self] event in
+            self?.handleUnifiedKeyEvent(event, isGlobal: true)
+        }
+        
+        print("🔧 统一事件处理机制已设置")
+    }
+    
+    /// 统一的事件处理入口，减少竞态条件
+    private func handleUnifiedKeyEvent(_ event: NSEvent, isGlobal: Bool) -> NSEvent? {
+        // 防止重复处理同一事件
+        guard !isProcessingKeyEvent else {
+            return isGlobal ? nil : event
+        }
+        
+        isProcessingKeyEvent = true
+        defer { isProcessingKeyEvent = false }
+        
+        let eventSource = isGlobal ? "全局" : "本地"
+        
+        // 根据当前切换器类型分发事件
+        if isShowingSwitcher {
+            return handleDS2UnifiedEvent(event, source: eventSource)
+        } else if isShowingAppSwitcher {
+            return handleCT2UnifiedEvent(event, source: eventSource)
+        }
+        
+        return isGlobal ? nil : event
+    }
+    
+    /// DS2切换器的统一事件处理
+    private func handleDS2UnifiedEvent(_ event: NSEvent, source: String) -> NSEvent? {
+        let settings = settingsManager.settings
+        
+        switch event.type {
+        case .keyUp:
+            // ESC键关闭切换器
+            if event.keyCode == 53 { // ESC key
+                print("🔴 [\(source)] 检测到ESC键，关闭DS2切换器")
+                hideSwitcherAsync()
+                return nil
+            }
+            
+        case .keyDown:
+            // 处理触发键
+            if event.keyCode == UInt16(settings.triggerKey.keyCode) {
+                if event.modifierFlags.contains(settings.modifierKey.eventModifier) {
+                    let isShiftPressed = event.modifierFlags.contains(.shift)
+                    
+                    if isShiftPressed {
+                        print("🟢 [\(source)] DS2反向切换: \(currentWindowIndex) -> ", terminator: "")
+                        moveToPreviousWindow()
+                        print("\(currentWindowIndex)")
+                    } else {
+                        print("🟢 [\(source)] DS2正向切换: \(currentWindowIndex) -> ", terminator: "")
+                        moveToNextWindow()
+                        print("\(currentWindowIndex)")
+                    }
+                    return nil // 阻止事件传递
+                }
+            }
+            
+        case .flagsChanged:
+            // 检测修饰键松开 - 添加防抖处理
+            let now = Date()
+            let timeSinceLastModifier = now.timeIntervalSince(lastModifierEventTime)
+            
+            // 防抖：如果距离上次修饰键事件时间太短，忽略
+            if timeSinceLastModifier < 0.05 { // 50ms防抖
+                return source == "全局" ? nil : event
+            }
+            
+            lastModifierEventTime = now
+            
+            if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
+                print("🔴 [\(source)] 检测到\(settings.modifierKey.displayName)键松开，关闭DS2切换器")
+                hideSwitcherAsync()
+                return nil
+            }
+            
+        default:
+            break
+        }
+        
+        return source == "全局" ? nil : event
+    }
+    
+    /// CT2切换器的统一事件处理
+    private func handleCT2UnifiedEvent(_ event: NSEvent, source: String) -> NSEvent? {
+        let settings = settingsManager.settings
+        
+        switch event.type {
+        case .keyUp:
+            // ESC键关闭切换器
+            if event.keyCode == 53 { // ESC key
+                print("🔴 [\(source)] 检测到ESC键，关闭CT2切换器")
+                hideAppSwitcherAsync()
+                return nil
+            }
+            
+        case .keyDown:
+            // 处理触发键
+            if event.keyCode == UInt16(settings.ct2TriggerKey.keyCode) {
+                if event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
+                    let isShiftPressed = event.modifierFlags.contains(.shift)
+                    
+                    if isShiftPressed {
+                        print("🟢 [\(source)] CT2反向切换: \(currentAppIndex) -> ", terminator: "")
+                        moveToPreviousApp()
+                        print("\(currentAppIndex)")
+                    } else {
+                        print("🟢 [\(source)] CT2正向切换: \(currentAppIndex) -> ", terminator: "")
+                        moveToNextApp()
+                        print("\(currentAppIndex)")
+                    }
+                    return nil // 阻止事件传递
+                }
+            }
+            
+        case .flagsChanged:
+            // 检测修饰键松开 - 添加防抖处理
+            let now = Date()
+            let timeSinceLastModifier = now.timeIntervalSince(lastModifierEventTime)
+            
+            // 防抖：如果距离上次修饰键事件时间太短，忽略
+            if timeSinceLastModifier < 0.05 { // 50ms防抖
+                return source == "全局" ? nil : event
+            }
+            
+            lastModifierEventTime = now
+            
+            if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
+                print("🔴 [\(source)] 检测到\(settings.ct2ModifierKey.displayName)键松开，关闭CT2切换器")
+                hideAppSwitcherAsync()
+                return nil
+            }
+            
+        default:
+            break
+        }
+        
+        return source == "全局" ? nil : event
+    }
+    
+    /// 清理事件监听器的统一方法
+    private func cleanupEventMonitors() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        if let globalMonitor = globalEventMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+            globalEventMonitor = nil
+        }
+    }
+    
+    // MARK: - 异步窗口激活优化 (方案2)
+    
+    /// 异步版本的DS2切换器隐藏方法，提供更流畅的体验
+    private func hideSwitcherAsync() {
+        guard isShowingSwitcher else { return }
+        
+        print("🚀 异步隐藏DS2切换器开始")
+        
+        // 立即隐藏UI，给用户即时反馈
+        isShowingSwitcher = false
+        switcherWindow?.orderOut(nil)
+        
+        // 停止修饰键看门狗
+        stopModifierKeyWatchdog()
+        
+        // 立即清理事件监听器
+        cleanupEventMonitors()
+        
+        // 立即重新启用全局热键
+        hotkeyManager?.reEnableHotkey()
+        
+        // 清除应用图标缓存（在后台线程执行）
+        DispatchQueue.global(qos: .utility).async {
+            AppIconCache.shared.clearCache()
+        }
+        
+        // 异步激活窗口，避免阻塞UI
+        if currentWindowIndex < windows.count {
+            let targetWindow = windows[currentWindowIndex]
+            print("🎯 准备异步激活窗口: \(targetWindow.title)")
+            
+            // 使用用户初始优先级确保响应性
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.activateWindowAsync(targetWindow)
+            }
+        }
+        
+        print("🚀 DS2切换器UI已隐藏，窗口激活异步进行中")
+    }
+    
+    /// 异步版本的CT2切换器隐藏方法，提供更流畅的体验
+    private func hideAppSwitcherAsync() {
+        guard isShowingAppSwitcher else { return }
+        
+        print("🚀 异步隐藏CT2切换器开始")
+        
+        // 立即隐藏UI，给用户即时反馈
+        isShowingAppSwitcher = false
+        switcherWindow?.orderOut(nil)
+        
+        // 停止修饰键看门狗
+        stopModifierKeyWatchdog()
+        
+        // 立即清理事件监听器
+        cleanupEventMonitors()
+        
+        // 立即重新启用全局热键
+        hotkeyManager?.reEnableHotkey()
+        
+        // 清除应用图标缓存（在后台线程执行）
+        DispatchQueue.global(qos: .utility).async {
+            AppIconCache.shared.clearCache()
+        }
+        
+        // 异步激活应用，避免阻塞UI
+        if currentAppIndex < apps.count, let firstWindow = apps[currentAppIndex].firstWindow {
+            print("🎯 准备异步激活应用: \(apps[currentAppIndex].appName)")
+            
+            // 使用用户初始优先级确保响应性
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.activateWindowAsync(firstWindow)
+            }
+        }
+        
+        print("🚀 CT2切换器UI已隐藏，应用激活异步进行中")
+    }
+    
+    /// 异步窗口激活方法，优化性能和流畅度
+    private func activateWindowAsync(_ window: WindowInfo) {
+        print("🚀 异步激活窗口开始: \(window.title)")
+        
+        // 首先尝试快速激活应用
+        guard let app = NSRunningApplication(processIdentifier: window.processID) else {
+            print("❌ 无法找到进程ID \(window.processID) 对应的应用")
+            return
+        }
+        
+        // 在主线程激活应用（系统要求）
+        DispatchQueue.main.async {
+            let activated = app.activate()
+            print("   📱 应用激活结果: \(activated ? "成功" : "失败")")
+        }
+        
+        // 短暂延迟后激活具体窗口
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            self?.activateSpecificWindowFast(window)
+        }
+    }
+    
+    /// 快速窗口激活方法，简化复杂的多显示器处理
+    private func activateSpecificWindowFast(_ window: WindowInfo) {
+        print("⚡ 快速激活具体窗口: \(window.title)")
+        
+        // 尝试从缓存获取AX元素
+        if let axElement = getCachedAXElement(
+            windowID: window.windowID,
+            processID: window.processID, 
+            windowIndex: window.axWindowIndex
+        ) {
+            // 使用AX API激活窗口
+            let raiseResult = AXUIElementPerformAction(axElement, kAXRaiseAction as CFString)
+            print("   ⚡ AX激活结果: \(raiseResult == .success ? "成功" : "失败")")
+            
+            if raiseResult == .success {
+                // 尝试设置为主窗口和焦点窗口
+                AXUIElementSetAttributeValue(axElement, kAXMainAttribute as CFString, kCFBooleanTrue)
+                AXUIElementSetAttributeValue(axElement, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+                print("   ✅ 窗口激活完成")
+                return
+            }
+        }
+        
+        // 如果AX方法失败，使用降级方案
+        print("   ⚠️ AX方法失败，使用降级方案")
+        fallbackActivateAsync(window)
+    }
+    
+    /// 异步降级激活方案
+    private func fallbackActivateAsync(_ window: WindowInfo) {
+        // 简化的降级方案，只激活应用
+        if let app = NSRunningApplication(processIdentifier: window.processID) {
+            app.activate()
+            print("   📱 降级方案：应用已激活")
+        }
+        
+        // 可选：尝试通过窗口ID进行基本操作（如果需要）
+        // 这里可以添加其他轻量级的窗口操作
+    }
+    
+    // MARK: - 修饰键看门狗机制
+    
+    /// 启动修饰键看门狗，提供双重保险机制
+    /// - Parameter switcherType: 切换器类型（DS2或CT2）
+    private func startModifierKeyWatchdog(for switcherType: SwitcherType) {
+        // 先停止任何现有的看门狗
+        stopModifierKeyWatchdog()
+        
+        // 重置看门狗状态
+        watchdogCallCount = 0
+        watchdogPhase = 0
+        lastSwitchTime = Date()
+        
+        // 检查是否需要启用看门狗（在快速切换场景下更有价值）
+        let timeSinceLastSwitch = Date().timeIntervalSince(lastSwitchTime)
+        let shouldUseWatchdog = timeSinceLastSwitch < 2.0 // 2秒内的操作启用看门狗
+        
+        if !shouldUseWatchdog {
+            print("🐕 看门狗：非快速切换场景，跳过启动")
+            return
+        }
+        
+        print("🐕 启动修饰键看门狗，类型: \(switcherType == .ds2 ? "DS2" : "CT2"), 间隔: \(Int(watchdogInterval * 1000))ms")
+        
+        modifierKeyWatchdog = Timer.scheduledTimer(withTimeInterval: watchdogInterval, repeats: true) { [weak self] _ in
+            self?.checkModifierKeyState(for: switcherType)
+        }
+    }
+    
+    /// 停止修饰键看门狗
+    private func stopModifierKeyWatchdog() {
+        guard let watchdog = modifierKeyWatchdog else { return }
+        
+        print("🐕 停止修饰键看门狗，运行时间: \(String(format: "%.1f", Double(watchdogCallCount) * watchdogInterval))s，检测次数: \(watchdogCallCount)")
+        
+        watchdog.invalidate()
+        modifierKeyWatchdog = nil
+        watchdogCallCount = 0
+        watchdogPhase = 0
+    }
+    
+    /// 检测修饰键状态的核心方法
+    /// - Parameter switcherType: 切换器类型
+    private func checkModifierKeyState(for switcherType: SwitcherType) {
+        watchdogCallCount += 1
+        watchdogPhase += 1
+        
+        // 性能保护：超时自动停止（16秒或1000次检测）
+        if watchdogCallCount > 1000 {
+            print("🐕⚠️ 看门狗超时自动停止（1000次检测）")
+            stopModifierKeyWatchdog()
+            return
+        }
+        
+        // 获取当前修饰键状态
+        let currentModifiers = NSEvent.modifierFlags
+        let settings = settingsManager.settings
+        
+        let requiredModifier: NSEvent.ModifierFlags
+        let modifierName: String
+        let isActive: Bool
+        
+        // 根据切换器类型检查对应的修饰键
+        switch switcherType {
+        case .ds2:
+            requiredModifier = settings.modifierKey.eventModifier
+            modifierName = settings.modifierKey.displayName
+            isActive = isShowingSwitcher
+        case .ct2:
+            requiredModifier = settings.ct2ModifierKey.eventModifier
+            modifierName = settings.ct2ModifierKey.displayName
+            isActive = isShowingAppSwitcher
+        }
+        
+        // 如果切换器已经不活跃，停止看门狗
+        if !isActive {
+            print("🐕 看门狗检测到切换器已关闭，自动停止")
+            stopModifierKeyWatchdog()
+            return
+        }
+        
+        // 检查修饰键是否仍在按下状态
+        if !currentModifiers.contains(requiredModifier) {
+            print("🐕🚨 [看门狗检测] \(modifierName)键已松开，立即关闭\(switcherType == .ds2 ? "DS2" : "CT2")切换器")
+            stopModifierKeyWatchdog()
+            
+            // 在主线程执行关闭操作
+            DispatchQueue.main.async { [weak self] in
+                switch switcherType {
+                case .ds2:
+                    self?.hideSwitcherAsync()
+                case .ct2:
+                    self?.hideAppSwitcherAsync()
+                }
+            }
+            return
+        }
+        
+        // 可选：动态调整检测频率（前10次检测使用高频率）
+        if watchdogPhase == 10 {
+            print("🐕 看门狗进入低频模式")
+            stopModifierKeyWatchdog()
+            
+            // 重新启动低频看门狗
+            modifierKeyWatchdog = Timer.scheduledTimer(withTimeInterval: 0.033, repeats: true) { [weak self] _ in
+                self?.checkModifierKeyState(for: switcherType)
+            }
+        }
+        
+        // 每100次检测输出一次状态（约1.6秒）
+        if watchdogCallCount % 100 == 0 {
+            print("🐕 看门狗运行正常，已检测\(watchdogCallCount)次，\(modifierName)键状态: 按下中")
+        }
     }
 } 

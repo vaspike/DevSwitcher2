@@ -204,10 +204,10 @@ class WindowManager: ObservableObject {
     func showWindowSwitcher() {
         guard !isShowingSwitcher else { return }
         
-        // 清除应用图标缓存，确保图标信息最新
+        // 1. 清除旧缓存，确保一个干净的开始
         AppIconCache.shared.clearCache()
         
-        // 获取当前应用的窗口
+        // 2. 获取当前应用的窗口 (这会开始填充缓存)
         getCurrentAppWindows()
         
         if windows.isEmpty {
@@ -230,6 +230,14 @@ class WindowManager: ObservableObject {
         switcherWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate()
         
+        // 3. 延迟打印日志，以获取渲染后的真实缓存大小
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self, self.isShowingSwitcher else { return }
+            let cacheInfo = AppIconCache.shared.getCacheInfo()
+            let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
+            print("📊 DS2 图标缓存状态 (渲染后): \(cacheInfo.count) / \(cacheInfo.maxSize), 总大小: \(formattedSize)")
+        }
+        
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
         
@@ -246,10 +254,10 @@ class WindowManager: ObservableObject {
     func showAppSwitcher() {
         guard !isShowingAppSwitcher else { return }
         
-        // 清除应用图标缓存，确保图标信息最新
+        // 1. 清除旧缓存，确保一个干净的开始
         AppIconCache.shared.clearCache()
         
-        // 获取所有应用的窗口信息
+        // 2. 获取所有应用的窗口信息 (这会开始填充缓存)
         getAllAppsWithWindows()
         
         if apps.isEmpty {
@@ -271,6 +279,14 @@ class WindowManager: ObservableObject {
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate()
+        
+        // 3. 延迟打印日志，以获取渲染后的真实缓存大小
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self, self.isShowingAppSwitcher else { return }
+            let cacheInfo = AppIconCache.shared.getCacheInfo()
+            let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
+            print("📊 CT2 图标缓存状态 (渲染后): \(cacheInfo.count) / \(cacheInfo.maxSize), 总大小: \(formattedSize)")
+        }
         
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
@@ -1284,6 +1300,9 @@ class WindowManager: ObservableObject {
         isShowingSwitcher = false
         switcherWindow?.orderOut(nil)
         
+        // 关键: 销毁视图以释放内存
+        switcherWindow?.contentView = NSView()
+        
         // 停止修饰键看门狗
         stopModifierKeyWatchdog()
         
@@ -1321,6 +1340,9 @@ class WindowManager: ObservableObject {
         // 立即隐藏UI，给用户即时反馈
         isShowingAppSwitcher = false
         switcherWindow?.orderOut(nil)
+        
+        // 关键: 销毁视图以释放内存
+        switcherWindow?.contentView = NSView()
         
         // 停止修饰键看门狗
         stopModifierKeyWatchdog()

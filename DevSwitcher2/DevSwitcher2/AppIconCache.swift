@@ -53,6 +53,23 @@ class AppIconCache: ObservableObject {
     }
     
     // MARK: - 公共接口
+    
+    // 图像缩放辅助函数，用于创建缩略图
+    private func resizeImage(_ image: NSImage, to size: NSSize) -> NSImage {
+        let newImage = NSImage(size: size)
+        newImage.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: size),
+                   from: NSRect(origin: .zero, size: image.size),
+                   operation: .sourceOver,
+                   fraction: 1.0)
+        newImage.unlockFocus()
+        // 确保图像有高质量的位图表示
+        if let tiff = newImage.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff) {
+            return NSImage(data: bitmap.representation(using: .png, properties: [:])!) ?? newImage
+        }
+        return newImage
+    }
+    
     func getIcon(for processID: pid_t) -> NSImage? {
         return cacheQueue.sync {
             // 如果缓存中有，更新访问时间并返回
@@ -64,18 +81,22 @@ class AppIconCache: ObservableObject {
             
             // 验证进程仍然存在
             guard let app = NSRunningApplication(processIdentifier: processID),
-                  let icon = app.icon else {
+                  let originalIcon = app.icon else {
                 return nil
             }
+            
+            // 创建缩略图以显著降低内存占用
+            let thumbnailSize = NSSize(width: 128, height: 128)
+            let thumbnailIcon = resizeImage(originalIcon, to: thumbnailSize)
             
             // 添加到缓存前检查大小
             checkAndCleanupCache()
             
-            // 缓存新图标
-            iconCache[processID] = CacheItem(icon: icon)
-            print("📦 缓存应用图标: \(app.localizedName ?? "Unknown") (PID: \(processID)), 当前缓存大小: \(iconCache.count)")
+            // 缓存新图标的缩略图
+            iconCache[processID] = CacheItem(icon: thumbnailIcon)
+            print("📦 缓存应用图标缩略图: \(app.localizedName ?? "Unknown") (PID: \(processID)), 当前缓存大小: \(iconCache.count)")
             
-            return icon
+            return thumbnailIcon
         }
     }
     
@@ -87,9 +108,15 @@ class AppIconCache: ObservableObject {
         }
     }
     
-    func getCacheInfo() -> (count: Int, maxSize: Int) {
+    func getCacheInfo() -> (count: Int, maxSize: Int, dataSize: Int) {
         return cacheQueue.sync {
-            return (count: iconCache.count, maxSize: maxCacheSize)
+            // 计算所有缓存图像的总数据大小
+            let totalSize = iconCache.values.reduce(0) { (result, item) -> Int in
+                // 使用tiffRepresentation来估算图像数据大小
+                let imageSize = item.icon.tiffRepresentation?.count ?? 0
+                return result + imageSize
+            }
+            return (count: iconCache.count, maxSize: maxCacheSize, dataSize: totalSize)
         }
     }
     

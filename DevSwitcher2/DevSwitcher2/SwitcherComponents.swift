@@ -31,13 +31,17 @@ struct AppInfo {
     let appName: String
     let firstWindow: WindowInfo?  // 该应用的第一个窗口
     let windowCount: Int         // 该应用的窗口总数
+    let isActive: Bool           // 是否为当前活跃应用
+    let lastUsedTime: Date?      // 最近使用时间
     
-    init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo]) {
+    init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo], isActive: Bool = false, lastUsedTime: Date? = nil) {
         self.bundleId = bundleId
         self.processID = processID
         self.appName = appName
         self.firstWindow = windows.first
         self.windowCount = windows.count
+        self.isActive = isActive
+        self.lastUsedTime = lastUsedTime
     }
 }
 
@@ -107,27 +111,47 @@ struct BaseSwitcherView<ItemType>: View {
     
     // MARK: - Item List View
     private var itemListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    Button(action: {
-                        onItemSelect(index)
-                    }) {
-                        itemContentBuilder(
-                            item,
-                            index == currentIndex,
-                            index == hoveredIndex
-                        )
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        Button(action: {
+                            onItemSelect(index)
+                        }) {
+                            itemContentBuilder(
+                                item,
+                                index == currentIndex,
+                                index == hoveredIndex
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .background(backgroundColorForIndex(index))
+                        .id(index) // 添加ID用于滚动定位
+                        .onHover { isHovering in
+                            hoveredIndex = isHovering ? index : nil
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .background(backgroundColorForIndex(index))
-                    .onHover { isHovering in
-                        hoveredIndex = isHovering ? index : nil
+                }
+            }
+            .background(.ultraThinMaterial)
+            .onChange(of: currentIndex) { newIndex in
+                // 当选中项改变时，自动滚动到该项
+                // 使用较短的动画时间以支持快速切换
+                withAnimation(.easeOut(duration: 0.15)) {
+                    proxy.scrollTo(newIndex, anchor: .center)
+                }
+            }
+            .onAppear {
+                // 初始显示时滚动到当前选中项
+                if currentIndex < items.count {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(currentIndex, anchor: .center)
+                        }
                     }
                 }
             }
         }
-        .background(.ultraThinMaterial)
     }
     
     // MARK: - Footer View

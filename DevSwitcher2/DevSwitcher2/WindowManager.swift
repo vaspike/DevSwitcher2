@@ -537,13 +537,15 @@ class WindowManager: ObservableObject {
          let allApps = NSWorkspace.shared.runningApplications
          print("所有运行的应用总数: \(allApps.count)")
          
-         // 获取所有窗口
+         // 获取所有窗口，按照前后顺序排列（最前面的窗口排在前面）
+         // 这个顺序就是Command+Tab的真实顺序
          let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
          print("系统总共找到 \(windowList.count) 个窗口")
          
          // 按应用组织窗口
          var appWindows: [pid_t: [WindowInfo]] = [:]
          var appInfoMap: [pid_t: (bundleId: String, appName: String)] = [:]
+         var appFirstWindowOrder: [pid_t: Int] = [:] // 记录每个应用的第一个窗口在列表中的位置
          
          // 首先建立processID到应用信息的映射
          for app in allApps {
@@ -561,9 +563,9 @@ class WindowManager: ObservableObject {
          
          print("有效应用数量: \(appInfoMap.count)")
          
-         // 处理所有窗口，按应用分组
+         // 处理所有窗口，按应用分组，同时记录应用首次出现的顺序
          var windowCounter = 1
-         for windowInfo in windowList {
+         for (windowIndex, windowInfo) in windowList.enumerated() {
              guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
                    let appInfo = appInfoMap[processID] else {
                  continue
@@ -583,6 +585,11 @@ class WindowManager: ObservableObject {
              let hasReasonableSize = width > 100 && height > 100
              
              if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                 // 记录该应用第一个窗口在列表中的位置（用于排序）
+                 if appFirstWindowOrder[processID] == nil {
+                     appFirstWindowOrder[processID] = windowIndex
+                 }
+                 
                  // 获取当前应用的窗口数量，用于确定AX窗口索引
                  let currentAppWindowCount = appWindows[processID]?.count ?? 0
                  
@@ -634,29 +641,48 @@ class WindowManager: ObservableObject {
              }
          }
          
-         // 创建AppInfo对象
+         // 创建AppInfo对象，同时收集应用激活状态信息
          for (processID, windows) in appWindows {
              guard let appInfo = appInfoMap[processID], !windows.isEmpty else {
                  continue
              }
              
+             // 查找对应的NSRunningApplication以获取激活状态
+             let runningApp = allApps.first { $0.processIdentifier == processID }
+             let isActive = runningApp?.isActive ?? false
+             
              let app = AppInfo(
                  bundleId: appInfo.bundleId,
                  processID: processID,
                  appName: appInfo.appName,
-                 windows: windows
+                 windows: windows,
+                 isActive: isActive,
+                 lastUsedTime: nil  // macOS不直接提供最近使用时间，我们用激活状态来排序
              )
              
              apps.append(app)
          }
          
-         // 按应用名称排序，确保切换顺序一致
-         apps.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+         // 按照窗口在CGWindowListCopyWindowInfo中的出现顺序排序
+         // 这样可以真正模拟Command+Tab的行为
+         apps.sort { app1, app2 in
+             let order1 = appFirstWindowOrder[app1.processID] ?? Int.max
+             let order2 = appFirstWindowOrder[app2.processID] ?? Int.max
+             
+             // 窗口出现越早的应用排在前面
+             if order1 != order2 {
+                 return order1 < order2
+             }
+             
+             // 如果顺序相同（理论上不应该发生），按应用名称排序
+             return app1.appName.localizedCaseInsensitiveCompare(app2.appName) == .orderedAscending
+         }
          
          print("📊 CT2统计结果:")
          print("   有效应用数量: \(apps.count)")
-         for app in apps {
-             print("   - \(app.appName): \(app.windowCount) 个窗口")
+         for (index, app) in apps.enumerated() {
+             let activeStatus = app.isActive ? " [ACTIVE]" : ""
+             print("   \(index + 1). \(app.appName): \(app.windowCount) 个窗口\(activeStatus)")
          }
          print("=== CT2调试信息结束 ===\n")
      }

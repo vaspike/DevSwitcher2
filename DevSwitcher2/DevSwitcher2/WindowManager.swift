@@ -386,27 +386,27 @@ class WindowManager: ObservableObject {
         print("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
         print("\n📋 系统总共找到 \(windowList.count) 个窗口")
         
-        // 打印所有窗口信息
-        print("\n🔍 所有窗口详情:")
-        for (index, windowInfo) in windowList.enumerated() {
-            let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t ?? -1
-            let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
-            let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
-            let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
-            let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
-            let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
-            let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
-            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String ?? "Unknown"
-            let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+        // // 打印所有窗口信息
+        // print("\n🔍 所有窗口详情:")
+        // for (index, windowInfo) in windowList.enumerated() {
+        //     let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t ?? -1
+        //     let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+        //     let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+        //     let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
+        //     let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
+        //     let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
+        //     let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
+        //     let ownerName = windowInfo[kCGWindowOwnerName as String] as? String ?? "Unknown"
+        //     let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
             
-            let isTarget = processID == targetApp.processIdentifier ? " ⭐ [TARGET]" : ""
+        //     let isTarget = processID == targetApp.processIdentifier ? " ⭐ [TARGET]" : ""
             
-            print("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
-            print("       Owner: \(ownerName)")
-            print("       Title: '\(windowTitle)'\(isTarget)")
-            print("       ID: \(windowID)")
-            print("")
-        }
+        //     print("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
+        //     print("       Owner: \(ownerName)")
+        //     print("       Title: '\(windowTitle)'\(isTarget)")
+        //     print("       ID: \(windowID)")
+        //     print("")
+        // }
         
                  // 筛选目标应用的窗口
          var candidateWindows: [[String: Any]] = []

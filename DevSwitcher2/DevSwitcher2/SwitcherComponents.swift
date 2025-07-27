@@ -19,9 +19,6 @@ enum SwitcherType {
 protocol SwitcherConfig {
     var type: SwitcherType { get }
     var title: String { get }
-    var hotkeyHint: String { get }
-    var cancelHint: String { get }
-    var selectHint: String { get }
 }
 
 // MARK: - 应用信息数据结构
@@ -49,18 +46,12 @@ struct AppInfo {
 struct DS2Config: SwitcherConfig {
     let type: SwitcherType = .ds2
     let title: String = LocalizedStrings.windowSwitcherTitle
-    let hotkeyHint: String = LocalizedStrings.hotkeyHint
-    let cancelHint: String = LocalizedStrings.cancelHint
-    let selectHint: String = LocalizedStrings.selectHint
 }
 
 // MARK: - CT2配置
 struct CT2Config: SwitcherConfig {
     let type: SwitcherType = .ct2
-    let title: String = "应用切换器"
-    let hotkeyHint: String = "按住修饰键继续切换"
-    let cancelHint: String = "ESC 取消"
-    let selectHint: String = "释放修饰键激活"
+    let title: String = LocalizedStrings.appSwitcherTitle
 }
 
 // MARK: - 通用切换器视图
@@ -78,7 +69,6 @@ struct BaseSwitcherView<ItemType>: View {
             headerView
             Divider()
             itemListView
-            footerView
         }
         .background(.ultraThinMaterial)
         .cornerRadius(12)
@@ -99,10 +89,6 @@ struct BaseSwitcherView<ItemType>: View {
                 .foregroundColor(.primary)
             
             Spacer()
-            
-            Text(config.hotkeyHint)
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -154,23 +140,6 @@ struct BaseSwitcherView<ItemType>: View {
         }
     }
     
-    // MARK: - Footer View
-    private var footerView: some View {
-        HStack {
-            Label(config.cancelHint, systemImage: "escape")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Label(config.selectHint, systemImage: "return")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(.regularMaterial)
-    }
     
     // MARK: - Helper Methods
     private var headerIcon: String {
@@ -265,12 +234,12 @@ struct AppItemContentView: View {
                 
                 // 窗口数量信息
                 if app.windowCount > 1 {
-                    Text("\(app.windowCount) 个窗口")
+                    Text(LocalizedStrings.multipleWindows(app.windowCount))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text("1 个窗口")
+                    Text(LocalizedStrings.singleWindow)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(1)

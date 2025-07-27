@@ -6,11 +6,21 @@
   
 */
 
-// 窗口切换器界面
+// DS2窗口切换器界面
 "window_switcher_title" = "选择窗口";
-"hotkey_hint" = "Command + ` 切换";
+"hotkey_hint_template" = "%@ + %@ 切换";
 "cancel_hint" = "ESC 取消";
 "select_hint" = "Enter 选择";
+
+// CT2应用切换器界面
+"app_switcher_title" = "应用切换器";
+"ct2_hotkey_hint_template" = "按住 %@ 继续切换";
+"ct2_cancel_hint" = "ESC 取消";
+"ct2_select_hint" = "释放修饰键激活";
+
+// 应用项显示
+"single_window" = "1 个窗口";
+"multiple_windows" = "%d 个窗口";
 
 // 状态栏
 "status_item_tooltip" = "DevSwitcher2 - 增强窗口切换";

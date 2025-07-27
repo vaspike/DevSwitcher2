@@ -18,11 +18,27 @@ extension String {
 }
 
 struct LocalizedStrings {
-    // 窗口切换器界面
+    // DS2窗口切换器界面
     static let windowSwitcherTitle = "window_switcher_title".localized
-    static let hotkeyHint = "hotkey_hint".localized
+    static func hotkeyHintTemplate(_ modifier: String, _ trigger: String) -> String {
+        return "hotkey_hint_template".localized(with: modifier, trigger)
+    }
     static let cancelHint = "cancel_hint".localized
     static let selectHint = "select_hint".localized
+    
+    // CT2应用切换器界面
+    static let appSwitcherTitle = "app_switcher_title".localized
+    static func ct2HotkeyHintTemplate(_ modifier: String) -> String {
+        return "ct2_hotkey_hint_template".localized(with: modifier)
+    }
+    static let ct2CancelHint = "ct2_cancel_hint".localized
+    static let ct2SelectHint = "ct2_select_hint".localized
+    
+    // 应用项显示
+    static let singleWindow = "single_window".localized
+    static func multipleWindows(_ count: Int) -> String {
+        return "multiple_windows".localized(with: count)
+    }
     
     // 状态栏
     static let statusItemTooltip = "status_item_tooltip".localized

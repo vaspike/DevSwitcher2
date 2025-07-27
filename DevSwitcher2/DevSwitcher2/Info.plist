@@ -34,5 +34,7 @@
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>DevSwitcher2 需要辅助功能权限来获取和切换应用窗口，以提供增强的 Command+` 功能。</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 </dict>
-</plist> 
+</plist>

@@ -9,27 +9,27 @@ import SwiftUI
 import Foundation
 import AppKit
 
-// MARK: - 切换器类型枚举
+// MARK: - Switcher Type Enum
 enum SwitcherType {
-    case ds2  // DevSwitcher2 (同应用窗口切换)
-    case ct2  // Command+Tab 增强 (所有应用切换)
+    case ds2  // DevSwitcher2 (same app window switching)
+    case ct2  // Command+Tab enhanced (all app switching)
 }
 
-// MARK: - 切换器配置协议
+// MARK: - Switcher Configuration Protocol
 protocol SwitcherConfig {
     var type: SwitcherType { get }
     var title: String { get }
 }
 
-// MARK: - 应用信息数据结构
+// MARK: - App Info Data Structure
 struct AppInfo {
     let bundleId: String
     let processID: pid_t
     let appName: String
-    let firstWindow: WindowInfo?  // 该应用的第一个窗口
-    let windowCount: Int         // 该应用的窗口总数
-    let isActive: Bool           // 是否为当前活跃应用
-    let lastUsedTime: Date?      // 最近使用时间
+    let firstWindow: WindowInfo?  // First window of this app
+    let windowCount: Int         // Total window count of this app
+    let isActive: Bool           // Whether it's the currently active app
+    let lastUsedTime: Date?      // Last used time
     
     init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo], isActive: Bool = false, lastUsedTime: Date? = nil) {
         self.bundleId = bundleId
@@ -42,19 +42,19 @@ struct AppInfo {
     }
 }
 
-// MARK: - DS2配置
+// MARK: - DS2 Configuration
 struct DS2Config: SwitcherConfig {
     let type: SwitcherType = .ds2
     let title: String = LocalizedStrings.windowSwitcherTitle
 }
 
-// MARK: - CT2配置
+// MARK: - CT2 Configuration
 struct CT2Config: SwitcherConfig {
     let type: SwitcherType = .ct2
     let title: String = LocalizedStrings.appSwitcherTitle
 }
 
-// MARK: - 通用切换器视图
+// MARK: - Generic Switcher View
 struct BaseSwitcherView<ItemType>: View {
     let config: SwitcherConfig
     let items: [ItemType]
@@ -112,7 +112,7 @@ struct BaseSwitcherView<ItemType>: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         .background(backgroundColorForIndex(index))
-                        .id(index) // 添加ID用于滚动定位
+                        .id(index) // Add ID for scroll positioning
                         .onHover { isHovering in
                             hoveredIndex = isHovering ? index : nil
                         }
@@ -121,14 +121,14 @@ struct BaseSwitcherView<ItemType>: View {
             }
             .background(.ultraThinMaterial)
             .onChange(of: currentIndex) { newIndex in
-                // 当选中项改变时，自动滚动到该项
-                // 使用较短的动画时间以支持快速切换
+                // Auto scroll to item when selection changes
+                // Use shorter animation time to support fast switching
                 withAnimation(.easeOut(duration: 0.15)) {
                     proxy.scrollTo(newIndex, anchor: .center)
                 }
             }
             .onAppear {
-                // 初始显示时滚动到当前选中项
+                // Scroll to current selected item on initial display
                 if currentIndex < items.count {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -162,7 +162,7 @@ struct BaseSwitcherView<ItemType>: View {
     }
 }
 
-// MARK: - 窗口项内容视图
+// MARK: - Window Item Content View
 struct WindowItemContentView: View {
     let window: WindowInfo
     let isSelected: Bool
@@ -170,25 +170,25 @@ struct WindowItemContentView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // 应用图标
+            // App icon
             AppIconView(processID: window.processID)
                 .frame(width: 48, height: 48)
             
             VStack(alignment: .leading, spacing: 4) {
-                // 项目名（主要显示）
+                // Project name (main display)
                 Text(window.projectName)
                     .font(.headline)
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // 应用名称
+                // App name
                 Text(window.appName)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                 
-                // 完整窗口标题（辅助信息）
+                // Full window title (auxiliary info)
                 if window.title != window.projectName {
                     Text(window.title)
                         .font(.caption)
@@ -199,7 +199,7 @@ struct WindowItemContentView: View {
             
             Spacer()
             
-            // 选中指示器
+            // Selection indicator
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.accentColor)
@@ -212,7 +212,7 @@ struct WindowItemContentView: View {
     }
 }
 
-// MARK: - 应用项内容视图
+// MARK: - App Item Content View
 struct AppItemContentView: View {
     let app: AppInfo
     let isSelected: Bool
@@ -220,19 +220,19 @@ struct AppItemContentView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // 应用图标
+            // App icon
             AppIconView(processID: app.processID)
                 .frame(width: 48, height: 48)
             
             VStack(alignment: .leading, spacing: 4) {
-                // 应用名称（主要显示）
+                // App name (main display)
                 Text(app.appName)
                     .font(.headline)
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // 窗口数量信息
+                // Window count info
                 if app.windowCount > 1 {
                     Text(LocalizedStrings.multipleWindows(app.windowCount))
                         .font(.subheadline)
@@ -245,7 +245,7 @@ struct AppItemContentView: View {
                         .lineLimit(1)
                 }
                 
-                // 如果有第一个窗口，显示其标题作为辅助信息
+                // If there's a first window, show its title as auxiliary info
                 if let firstWindow = app.firstWindow, !firstWindow.projectName.isEmpty {
                     Text(firstWindow.projectName)
                         .font(.caption)
@@ -256,7 +256,7 @@ struct AppItemContentView: View {
             
             Spacer()
             
-            // 选中指示器
+            // Selection indicator
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.accentColor)
@@ -269,7 +269,7 @@ struct AppItemContentView: View {
     }
 }
 
-// MARK: - DS2切换器视图（使用通用组件）
+// MARK: - DS2 Switcher View (Using Generic Components)
 struct DS2SwitcherView: View {
     @ObservedObject var windowManager: WindowManager
     
@@ -294,7 +294,7 @@ struct DS2SwitcherView: View {
     }
 }
 
-// MARK: - CT2切换器视图（使用通用组件）
+// MARK: - CT2 Switcher View (Using Generic Components)
 struct CT2SwitcherView: View {
     @ObservedObject var windowManager: WindowManager
     

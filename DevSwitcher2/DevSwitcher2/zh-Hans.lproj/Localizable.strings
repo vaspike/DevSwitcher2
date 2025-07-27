@@ -74,7 +74,7 @@
 "ct2_app_switcher" = "多应用切换器";
 "enable_ct2" = "启用";
 "current_ct2_hotkey" = "当前快捷键";
-"ct2_function_disabled" = "多应用切换器 功能已禁用";
+"ct2_function_disabled" = "多应用切换器功能未启用";
 
 // MARK: - 修饰键
 "modifier_command" = "Command ⌘";

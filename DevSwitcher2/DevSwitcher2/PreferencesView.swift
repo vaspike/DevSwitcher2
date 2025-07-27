@@ -16,7 +16,7 @@ struct PreferencesView: View {
     var body: some View {
         VStack(spacing: 0) {
             
-            // Tab选择器
+            // Tab selector
             HStack {
                 TabButton(title: LocalizedStrings.coreSettings, isSelected: selectedTab == 0) {
                     selectedTab = 0
@@ -31,7 +31,7 @@ struct PreferencesView: View {
             .padding(.horizontal)
             .padding(.top, 16)
             
-            // 内容区域
+            // Content area
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if selectedTab == 0 {
@@ -47,8 +47,8 @@ struct PreferencesView: View {
         .frame(width: 700, height: 500)
         .background(.ultraThinMaterial)
         .onReceive(NotificationCenter.default.publisher(for: .languageChanged)) { _ in
-            // 当语言变化时强制刷新视图
-            // SwiftUI会自动重新计算LocalizedStrings的值
+            // Force refresh view when language changes
+            // SwiftUI will automatically recalculate LocalizedStrings values
         }
     }
 }
@@ -74,7 +74,7 @@ struct TabButton: View {
     }
 }
 
-// MARK: - 核心功能设置视图
+// MARK: - Core Settings View
 struct CoreSettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
     @StateObject private var languageManager = LanguageManager.shared
@@ -82,7 +82,7 @@ struct CoreSettingsView: View {
     @State private var selectedTrigger: TriggerKey
     @State private var showingHotkeyWarning = false
     
-    // CT2设置状态
+    // CT2 settings state
     @State private var ct2Enabled: Bool
     @State private var selectedCT2Modifier: ModifierKey
     @State private var selectedCT2Trigger: TriggerKey
@@ -98,7 +98,7 @@ struct CoreSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            // 语言设置
+            // Language settings
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text(LocalizedStrings.language)
@@ -143,7 +143,7 @@ struct CoreSettingsView: View {
             
             Divider()
             
-            // DS2快捷键设置
+            // DS2 hotkey settings
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text(LocalizedStrings.ds2SameAppWindowSwitching)
@@ -211,7 +211,7 @@ struct CoreSettingsView: View {
             
             Divider()
             
-            // CT2快捷键设置
+            // CT2 hotkey settings
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text(LocalizedStrings.ct2AppSwitcher)
@@ -223,7 +223,7 @@ struct CoreSettingsView: View {
                     Toggle(LocalizedStrings.enableCT2, isOn: $ct2Enabled)
                         .toggleStyle(SwitchToggleStyle())
                         .onChange(of: ct2Enabled) { newValue in
-                            // 实时更新CT2启用状态
+                            // Real-time update CT2 enabled state
                             settingsManager.updateCT2Enabled(newValue)
                             NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
                         }
@@ -305,7 +305,7 @@ struct CoreSettingsView: View {
             
             Divider()
             
-            // 窗口标题配置
+            // Window title configuration
             WindowTitleConfigView()
         }
         .alert(LocalizedStrings.hotkeyConflictTitle, isPresented: $showingHotkeyWarning) {
@@ -315,10 +315,10 @@ struct CoreSettingsView: View {
         }
     }
     
-    // DS2热键设置方法
+    // DS2 hotkey setting methods
     private func applyDS2HotkeySettings() {
         settingsManager.updateHotkey(modifier: selectedModifier, trigger: selectedTrigger)
-        // 通知系统重新注册热键
+        // Notify system to re-register hotkeys
         NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
     }
     
@@ -328,11 +328,11 @@ struct CoreSettingsView: View {
         applyDS2HotkeySettings()
     }
     
-    // CT2热键设置方法
+    // CT2 hotkey setting methods
     private func applyCT2HotkeySettings() {
         settingsManager.updateCT2Enabled(ct2Enabled)
         settingsManager.updateCT2Hotkey(modifier: selectedCT2Modifier, trigger: selectedCT2Trigger)
-        // 通知系统重新注册热键
+        // Notify system to re-register hotkeys
         NotificationCenter.default.post(name: .hotkeySettingsChanged, object: nil)
     }
     
@@ -344,7 +344,7 @@ struct CoreSettingsView: View {
     }
 }
 
-// MARK: - 窗口标题配置视图
+// MARK: - Window Title Configuration View
 struct WindowTitleConfigView: View {
     @StateObject private var settingsManager = SettingsManager.shared
     @State private var selectedDefaultStrategy: TitleExtractionStrategy
@@ -367,7 +367,7 @@ struct WindowTitleConfigView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
             
-            // 默认策略设置
+            // Default strategy settings
             VStack(alignment: .leading, spacing: 12) {
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -416,7 +416,7 @@ struct WindowTitleConfigView: View {
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
             
-            // 应用特定配置
+            // App-specific configuration
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(LocalizedStrings.appSpecificConfig)
@@ -464,7 +464,7 @@ struct WindowTitleConfigView: View {
                 )
                 settingsManager.setAppTitleConfig(config)
                 showingAddAppDialog = false
-                // 重置表单
+                // Reset form
                 newAppBundleId = ""
                 newAppName = ""
                 newAppStrategy = .beforeFirstSeparator
@@ -569,7 +569,7 @@ struct AddAppConfigView: View {
     }
 }
 
-// MARK: - 关于视图
+// MARK: - About View
 struct AboutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -631,7 +631,7 @@ struct AboutView: View {
     }
 }
 
-// MARK: - 通知扩展
+// MARK: - Notification Extensions
 extension Notification.Name {
     static let hotkeySettingsChanged = Notification.Name("hotkeySettingsChanged")
 }

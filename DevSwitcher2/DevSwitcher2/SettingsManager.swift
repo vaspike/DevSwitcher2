@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 import Carbon
 
-// MARK: - 修饰键枚举
+// MARK: - Modifier Key Enum
 enum ModifierKey: String, CaseIterable, Codable {
     case command = "command"
     case option = "option"
@@ -69,19 +69,19 @@ enum ModifierKey: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - 触发键枚举
+// MARK: - Trigger Key Enum
 enum TriggerKey: String, CaseIterable, Codable {
-    case grave = "`"           // ` 键
-    case tab = "Tab"          // Tab 键
-    case space = "Space"      // 空格键
-    case semicolon = ";"      // ; 键
-    case quote = "'"          // ' 键
-    case comma = ","          // , 键
-    case period = "."         // . 键
-    case slash = "/"          // / 键
-    case backslash = "\\"     // \ 键
-    case leftBracket = "["    // [ 键
-    case rightBracket = "]"   // ] 键
+    case grave = "`"           // ` key
+    case tab = "Tab"          // Tab key
+    case space = "Space"      // Space key
+    case semicolon = ";"      // ; key
+    case quote = "'"          // ' key
+    case comma = ","          // , key
+    case period = "."         // . key
+    case slash = "/"          // / key
+    case backslash = "\\"     // \ key
+    case leftBracket = "["    // [ key
+    case rightBracket = "]"   // ] key
     
     var displayName: String {
         switch self {
@@ -138,14 +138,14 @@ enum TriggerKey: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - 窗口标题获取策略
+// MARK: - Window Title Extraction Strategy
 enum TitleExtractionStrategy: String, CaseIterable, Codable {
-    case firstPart = "firstPart"           // 取第一部分（默认）
-    case lastPart = "lastPart"             // 取最后部分
-    case beforeFirstSeparator = "beforeFirstSeparator"  // 第一个分隔符之前
-    case afterLastSeparator = "afterLastSeparator"      // 最后一个分隔符之后
-    case fullTitle = "fullTitle"           // 完整标题
-    case customSeparator = "customSeparator" // 自定义分隔符
+    case firstPart = "firstPart"           // Take first part (default)
+    case lastPart = "lastPart"             // Take last part
+    case beforeFirstSeparator = "beforeFirstSeparator"  // Before first separator
+    case afterLastSeparator = "afterLastSeparator"      // After last separator
+    case fullTitle = "fullTitle"           // Full title
+    case customSeparator = "customSeparator" // Custom separator
     
     var displayName: String {
         switch self {
@@ -165,7 +165,7 @@ enum TitleExtractionStrategy: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - 应用标题配置
+// MARK: - App Title Configuration
 struct AppTitleConfig: Codable {
     let bundleId: String
     let appName: String
@@ -180,7 +180,7 @@ struct AppTitleConfig: Codable {
     }
 }
 
-// MARK: - 应用设置数据结构
+// MARK: - App Settings Data Structure
 struct AppSettings: Codable {
     var modifierKey: ModifierKey
     var triggerKey: TriggerKey
@@ -188,7 +188,7 @@ struct AppSettings: Codable {
     var defaultTitleStrategy: TitleExtractionStrategy
     var defaultCustomSeparator: String
     
-    // CT2设置
+    // CT2 settings
     var ct2Enabled: Bool
     var ct2ModifierKey: ModifierKey
     var ct2TriggerKey: TriggerKey
@@ -218,14 +218,14 @@ struct AppSettings: Codable {
         ],
         defaultTitleStrategy: .beforeFirstSeparator,
         defaultCustomSeparator: " - ",
-        // CT2默认设置
+        // CT2 default settings
         ct2Enabled: true,
         ct2ModifierKey: .command,
         ct2TriggerKey: .tab
     )
 }
 
-// MARK: - 设置管理器
+// MARK: - Settings Manager
 class SettingsManager: ObservableObject {
     @Published var settings: AppSettings
     
@@ -239,8 +239,8 @@ class SettingsManager: ObservableObject {
             do {
                 self.settings = try JSONDecoder().decode(AppSettings.self, from: data)
             } catch {
-                print("Settings decoding failed, possibly due to version incompatibility: \(error)")
-                // 尝试迁移旧版本设置
+                Logger.log("Settings decoding failed, possibly due to version incompatibility: \(error)")
+                // Try to migrate old version settings
                 self.settings = Self.migrateOldSettings() ?? AppSettings.default
                 saveSettings()
             }
@@ -250,27 +250,27 @@ class SettingsManager: ObservableObject {
         }
     }
     
-    // 迁移旧版本设置的方法
+    // Method to migrate old version settings
     private static func migrateOldSettings() -> AppSettings? {
-        // 如果无法解码新版本设置，尝试从UserDefaults中读取已知的旧设置项
-        // 这里可以根据需要添加更多的迁移逻辑
+        // If unable to decode new version settings, try reading known old settings from UserDefaults
+        // More migration logic can be added here as needed
         
-        // 创建默认设置并保持现有的基本配置
+        // Create default settings and maintain existing basic configuration
         let migratedSettings = AppSettings.default
         
-        // 可以在这里添加从旧版本设置中读取特定值的逻辑
-        // 例如：if let oldModifier = UserDefaults.standard.string(forKey: "oldModifierKey") { ... }
+        // Logic to read specific values from old version settings can be added here
+        // For example: if let oldModifier = UserDefaults.standard.string(forKey: "oldModifierKey") { ... }
         
-        print("Using default settings with CT2 functionality enabled")
+        Logger.log("Using default settings with CT2 functionality enabled")
         return migratedSettings
     }
     
     func saveSettings() {
         if let data = try? JSONEncoder().encode(settings) {
             userDefaults.set(data, forKey: settingsKey)
-            print("Settings saved")
+            Logger.log("Settings saved")
         } else {
-            print("Failed to save settings")
+            Logger.log("Failed to save settings")
         }
     }
     
@@ -279,14 +279,14 @@ class SettingsManager: ObservableObject {
         saveSettings()
     }
     
-    // MARK: - 快捷键设置
+    // MARK: - Hotkey Settings
     func updateHotkey(modifier: ModifierKey, trigger: TriggerKey) {
         settings.modifierKey = modifier
         settings.triggerKey = trigger
         saveSettings()
     }
     
-    // MARK: - CT2设置
+    // MARK: - CT2 Settings
     func updateCT2Enabled(_ enabled: Bool) {
         settings.ct2Enabled = enabled
         saveSettings()
@@ -298,7 +298,7 @@ class SettingsManager: ObservableObject {
         saveSettings()
     }
     
-    // MARK: - 应用标题配置
+    // MARK: - App Title Configuration
     func getAppTitleConfig(for bundleId: String) -> AppTitleConfig? {
         return settings.appTitleConfigs[bundleId]
     }
@@ -319,14 +319,14 @@ class SettingsManager: ObservableObject {
         saveSettings()
     }
     
-    // MARK: - 通用标题提取算法
+    // MARK: - Generic Title Extraction Algorithm
     func extractProjectName(from title: String, bundleId: String, appName: String) -> String {
-        // 首先检查是否有应用特定配置
+        // First check if there are app-specific configurations
         if let config = getAppTitleConfig(for: bundleId) {
             return extractProjectName(from: title, using: config.strategy, customSeparator: config.customSeparator)
         }
         
-        // 使用默认策略
+        // Use default strategy
         return extractProjectName(from: title, using: settings.defaultTitleStrategy, customSeparator: settings.defaultCustomSeparator)
     }
     

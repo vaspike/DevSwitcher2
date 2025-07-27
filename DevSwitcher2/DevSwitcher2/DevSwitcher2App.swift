@@ -24,17 +24,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var windowManager: WindowManager?
     var hotkeyManager: HotkeyManager?
     var preferencesWindow: NSWindow?
-    var accessibilityCheckTimer: Timer? // 添加Timer引用用于管理
+    var accessibilityCheckTimer: Timer? // Timer reference for management
     
     deinit {
-        // 清理Timer资源
+        // Clean up Timer resource
         accessibilityCheckTimer?.invalidate()
         accessibilityCheckTimer = nil
-        print("🗑️ AppDelegate已清理，Timer资源已释放")
+        Logger.log("🗑️ AppDelegate deinitialized, Timer resource released")
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 创建状态栏图标
+        // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
@@ -43,26 +43,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             button.target = self
             button.toolTip = LocalizedStrings.statusItemTooltip
             
-            // 设置右键菜单
+            // Set up the right-click menu
             setupStatusBarMenu()
         }
         
-        // 初始化窗口管理器和热键管理器
+        // Initialize managers
         windowManager = WindowManager()
         hotkeyManager = HotkeyManager(windowManager: windowManager!)
         
-        // 设置双向引用
+        // Set up the bidirectional reference
         windowManager?.hotkeyManager = hotkeyManager
         
-        // 请求辅助功能权限
+        // Request accessibility permissions
         requestAccessibilityPermission()
         
-        // 注册热键
+        // Register the hotkey
         hotkeyManager?.registerHotkey()
     }
     
     @objc func statusBarButtonClicked() {
-        // 左键点击不再触发主逻辑，改为显示菜单
+        // Left-click now shows the menu instead of triggering the main logic
         if let menu = statusItem?.menu {
             statusItem?.popUpMenu(menu)
         }
@@ -71,14 +71,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func setupStatusBarMenu() {
         let menu = NSMenu()
         
-        // 偏好设置菜单项
+        // Preferences menu item
         let preferencesItem = NSMenuItem(title: LocalizedStrings.preferences, action: #selector(showPreferences), keyEquivalent: ",")
         preferencesItem.target = self
         menu.addItem(preferencesItem)
         
         menu.addItem(NSMenuItem.separator())
         
-        // 退出应用菜单项
+        // Quit App menu item
         let quitItem = NSMenuItem(title: LocalizedStrings.quitApp, action: #selector(quitApplication), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -87,14 +87,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     
     @objc func showPreferences() {
-        // 如果偏好设置窗口已经存在，就激活它
+        // If the preferences window already exists, bring it to the front
         if let window = preferencesWindow {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate()
             return
         }
         
-        // 创建偏好设置窗口
+        // Create the preferences window
         let contentView = PreferencesView()
         let hostingView = NSHostingView(rootView: contentView)
         
@@ -111,7 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.setFrameAutosaveName("PreferencesWindow")
         window.isReleasedWhenClosed = false
         
-        // 设置窗口关闭时的清理
+        // Set up cleanup for when the window is closed
         window.delegate = self
         
         preferencesWindow = window
@@ -127,9 +127,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let accessibilityEnabled = AXIsProcessTrusted()
         
         if !accessibilityEnabled {
-            print(LocalizedStrings.accessibilityPermissionRequired)
+            Logger.log(LocalizedStrings.accessibilityPermissionRequired)
             
-            // 显示权限提示对话框
+            // Show permission prompt dialog
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 alert.messageText = LocalizedStrings.accessibilityPermissionTitle
@@ -140,23 +140,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 
                 let response = alert.runModal()
                 if response == .alertFirstButtonReturn {
-                    // 打开系统偏好设置
+                    // Open System Settings
                     NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
                 }
             }
             
-            // 定期检查权限状态
+            // Periodically check the permission status
             accessibilityCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
                 if AXIsProcessTrusted() {
-                    print(LocalizedStrings.accessibilityPermissionGranted)
+                    Logger.log(LocalizedStrings.accessibilityPermissionGranted)
                     timer.invalidate()
                     self?.accessibilityCheckTimer = nil
-                    // 权限获得后重新注册热键
+                    // Re-register hotkey once permission is granted
                     self?.hotkeyManager?.registerHotkey()
                 }
             }
         } else {
-            print(LocalizedStrings.accessibilityPermissionGranted)
+            Logger.log(LocalizedStrings.accessibilityPermissionGranted)
         }
     }
     
@@ -167,3 +167,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 }
+

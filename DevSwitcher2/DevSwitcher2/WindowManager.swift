@@ -17,7 +17,7 @@ struct WindowInfo {
     let projectName: String
     let appName: String
     let processID: pid_t
-    let axWindowIndex: Int  // AX窗口的索引
+    let axWindowIndex: Int  // AX window index
 }
 
 class WindowManager: ObservableObject {
@@ -25,7 +25,7 @@ class WindowManager: ObservableObject {
     @Published var isShowingSwitcher = false
     @Published var currentWindowIndex = 0
     
-    // CT2相关属性
+    // CT2 related properties
     @Published var apps: [AppInfo] = []
     @Published var isShowingAppSwitcher = false
     @Published var currentAppIndex = 0
@@ -34,21 +34,21 @@ class WindowManager: ObservableObject {
     private var eventMonitor: Any?
     private var globalEventMonitor: Any?
     
-    // 当前视图类型跟踪
+    // Current view type tracking
     private var currentViewType: SwitcherType = .ds2
     
-    // 事件处理状态管理
+    // Event handling state management
     private var isProcessingKeyEvent = false
     private var lastModifierEventTime = Date()
     
-    // 修饰键看门狗机制
+    // Modifier key watchdog mechanism
     private var modifierKeyWatchdog: Timer?
     private let watchdogInterval: TimeInterval = 0.016 // 16ms ≈ 60Hz
     private var watchdogCallCount = 0
     private var watchdogPhase = 0
     private var lastSwitchTime = Date()
     
-    // AX元素缓存项结构
+    // AX element cache item structure
     private struct AXCacheItem {
         let element: AXUIElement
         let processID: pid_t
@@ -65,15 +65,15 @@ class WindowManager: ObservableObject {
         }
     }
     
-    // 改进的AX元素缓存，包含更多元数据
+    // Improved AX element cache with more metadata
     private var axElementCache: [CGWindowID: AXCacheItem] = [:]
-    private let maxAXCacheSize = 100  // 最大缓存100个AX元素
-    private let axCacheCleanupThreshold = 120  // 达到120个时开始清理
+    private let maxAXCacheSize = 100  // Maximum cache of 100 AX elements
+    private let axCacheCleanupThreshold = 120  // Start cleanup when reaching 120
     
-    // HotkeyManager的弱引用，避免循环引用
+    // Weak reference to HotkeyManager to avoid circular reference
     weak var hotkeyManager: HotkeyManager?
     
-    // 设置管理器
+    // Settings manager
     private let settingsManager = SettingsManager.shared
     
     init() {
@@ -81,7 +81,7 @@ class WindowManager: ObservableObject {
     }
     
     deinit {
-        // 确保事件监听器被清理
+        // Ensure event listeners are cleaned up
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
         }
@@ -89,26 +89,26 @@ class WindowManager: ObservableObject {
             NSEvent.removeMonitor(globalMonitor)
         }
         
-        // 清理看门狗定时器
+        // Clean up watchdog timer
         stopModifierKeyWatchdog()
         
-        // 清理AX缓存
-        print("🗑️ WindowManager清理，释放 \(axElementCache.count) 个AX元素")
+        // Clean up AX cache
+        Logger.log("🗑️ WindowManager cleanup, releasing \(axElementCache.count) AX elements")
         axElementCache.removeAll()
     }
     
-    // MARK: - AX缓存管理方法
+    // MARK: - AX Cache Management Methods
     
-    // 智能清理AX缓存
+    // Smart AX cache cleanup
     private func cleanupAXCache() {
         guard axElementCache.count >= axCacheCleanupThreshold else { return }
         
-        print("🧹 开始AX缓存LRU清理，当前大小: \(axElementCache.count)")
+        Logger.log("🧹 Starting AX cache LRU cleanup, current size: \(axElementCache.count)")
         
-        // 获取当前运行的应用进程ID集合
+        // Get set of currently running application process IDs
         let runningProcesses = Set(NSWorkspace.shared.runningApplications.map { $0.processIdentifier })
         
-        // 首先移除已终止进程的缓存项
+        // First remove cache items for terminated processes
         var itemsToRemove: [CGWindowID] = []
         for (windowID, cacheItem) in axElementCache {
             if !runningProcesses.contains(cacheItem.processID) {
@@ -121,9 +121,9 @@ class WindowManager: ObservableObject {
         }
         
         let afterProcessCleanup = axElementCache.count
-        print("🗑️ 移除已终止进程的AX元素: \(itemsToRemove.count) 个")
+        Logger.log("🗑️ Removing AX elements for terminated processes: \(itemsToRemove.count) items")
         
-        // 如果还是超过限制，执行LRU清理
+        // If still over limit, perform LRU cleanup
         if axElementCache.count > maxAXCacheSize {
             let sortedEntries = axElementCache.sorted { $0.value.lastAccessTime < $1.value.lastAccessTime }
             let itemsToKeep = Array(sortedEntries.suffix(maxAXCacheSize))
@@ -135,46 +135,46 @@ class WindowManager: ObservableObject {
             let lruRemovedCount = axElementCache.count - newCache.count
             axElementCache = newCache
             
-            print("🧹 LRU清理完成，移除 \(lruRemovedCount) 个AX元素，当前大小: \(axElementCache.count)")
+            Logger.log("🧹 LRU cleanup completed, removed \(lruRemovedCount) AX elements, current size: \(axElementCache.count)")
         }
     }
     
-    // 获取或缓存AX元素
+    // Get or cache AX element
     private func getCachedAXElement(windowID: CGWindowID, processID: pid_t, windowIndex: Int) -> AXUIElement? {
-        // 检查缓存中是否存在并更新访问时间
+        // Check if exists in cache and update access time
         if var cachedItem = axElementCache[windowID] {
             cachedItem.updateAccessTime()
             axElementCache[windowID] = cachedItem
             return cachedItem.element
         }
         
-        // 缓存中没有，获取新的AX元素
+        // Not in cache, get new AX element
         let (_, axElement) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: windowIndex)
         
         if let element = axElement {
-            // 在添加到缓存前检查是否需要清理
+            // Check if cleanup is needed before adding to cache
             cleanupAXCache()
             
-            // 添加到缓存
+            // Add to cache
             axElementCache[windowID] = AXCacheItem(element: element, processID: processID)
-            print("📦 缓存AX元素: WindowID \(windowID), 当前缓存大小: \(axElementCache.count)")
+            Logger.log("📦 Caching AX element: WindowID \(windowID), current cache size: \(axElementCache.count)")
         }
         
         return axElement
     }
     
-    // MARK: - 内存优化的视图创建方法
+    // MARK: - Memory Optimized View Creation Methods
     
-    // 创建DS2视图
+    // Create DS2 view
     private func createDS2HostingView() -> NSHostingView<DS2SwitcherView> {
-        print("🆕 创建DS2 HostingView")
+        Logger.log("🆕 Creating DS2 HostingView")
         let contentView = DS2SwitcherView(windowManager: self)
         return NSHostingView(rootView: contentView)
     }
     
-    // 创建CT2视图
+    // Create CT2 view
     private func createCT2HostingView() -> NSHostingView<CT2SwitcherView> {
-        print("🆕 创建CT2 HostingView")
+        Logger.log("🆕 Creating CT2 HostingView")
         let contentView = CT2SwitcherView(windowManager: self)
         return NSHostingView(rootView: contentView)
     }
@@ -194,10 +194,10 @@ class WindowManager: ObservableObject {
         switcherWindow?.hasShadow = true
         switcherWindow?.isOpaque = false
         
-        // 初始内容视图将在首次显示时设置
-        switcherWindow?.contentView = NSView() // 临时空视图
+        // Initial content view will be set on first display
+        switcherWindow?.contentView = NSView() // Temporary empty view
         
-        // 居中显示
+        // Center display
         switcherWindow?.center()
     }
     
@@ -211,7 +211,7 @@ class WindowManager: ObservableObject {
         getCurrentAppWindows()
         
         if windows.isEmpty {
-            print(LocalizedStrings.noWindowsFound)
+            Logger.log(LocalizedStrings.noWindowsFound)
             return
         }
         
@@ -235,7 +235,7 @@ class WindowManager: ObservableObject {
             guard let self = self, self.isShowingSwitcher else { return }
             let cacheInfo = AppIconCache.shared.getCacheInfo()
             let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
-            print("📊 DS2 图标缓存状态 (渲染后): \(cacheInfo.count) / \(cacheInfo.maxSize), 总大小: \(formattedSize)")
+            Logger.log("📊 DS2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
         }
         
         // 使用统一的事件处理机制
@@ -250,7 +250,7 @@ class WindowManager: ObservableObject {
         hideSwitcherAsync()
     }
     
-    // MARK: - CT2功能：应用切换器显示和隐藏
+    // MARK: - CT2 Functionality: App Switcher Display and Hide
     func showAppSwitcher() {
         guard !isShowingAppSwitcher else { return }
         
@@ -261,7 +261,7 @@ class WindowManager: ObservableObject {
         getAllAppsWithWindows()
         
         if apps.isEmpty {
-            print("没有找到有窗口的应用")
+            Logger.log("No applications with windows found")
             return
         }
         
@@ -285,7 +285,7 @@ class WindowManager: ObservableObject {
             guard let self = self, self.isShowingAppSwitcher else { return }
             let cacheInfo = AppIconCache.shared.getCacheInfo()
             let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
-            print("📊 CT2 图标缓存状态 (渲染后): \(cacheInfo.count) / \(cacheInfo.maxSize), 总大小: \(formattedSize)")
+            Logger.log("📊 CT2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
         }
         
         // 使用统一的事件处理机制
@@ -308,7 +308,7 @@ class WindowManager: ObservableObject {
         guard !windows.isEmpty else { return }
         let oldIndex = currentWindowIndex
         currentWindowIndex = (currentWindowIndex + 1) % windows.count
-        print("🔄 moveToNextWindow: \(oldIndex) -> \(currentWindowIndex) (总数: \(windows.count))")
+        Logger.log("🔄 moveToNextWindow: \(oldIndex) -> \(currentWindowIndex) (total: \(windows.count))")
     }
     
     func moveToPreviousWindow() {
@@ -322,12 +322,12 @@ class WindowManager: ObservableObject {
         hideSwitcher()
     }
     
-    // MARK: - CT2功能：应用切换相关方法
+    // MARK: - CT2 Functionality: App Switching Related Methods
     func moveToNextApp() {
         guard !apps.isEmpty else { return }
         let oldIndex = currentAppIndex
         currentAppIndex = (currentAppIndex + 1) % apps.count
-        print("🔄 moveToNextApp: \(oldIndex) -> \(currentAppIndex) (总数: \(apps.count))")
+        Logger.log("🔄 moveToNextApp: \(oldIndex) -> \(currentAppIndex) (total: \(apps.count))")
     }
     
     func moveToPreviousApp() {
@@ -341,7 +341,7 @@ class WindowManager: ObservableObject {
         hideAppSwitcher()
     }
     
-    // MARK: - EventTap支持方法
+    // MARK: - EventTap Support Methods
     func selectNextApp() {
         moveToNextApp()
     }
@@ -359,13 +359,13 @@ class WindowManager: ObservableObject {
         // 不再全量清空AX缓存，让智能清理机制处理
         
         // 打印所有运行的应用
-        print("\n=== 调试信息开始 ===")
+        Logger.log("\n=== Debug Information Start ===")
         let allApps = NSWorkspace.shared.runningApplications
-        // print("所有运行的应用:")
+        // Logger.log("All running applications:")
         // for app in allApps {
         //     let isActive = app.isActive ? " [ACTIVE]" : ""
         //     let bundleId = app.bundleIdentifier ?? "Unknown"
-        //     print("  - \(app.localizedName ?? "Unknown") (PID: \(app.processIdentifier), Bundle: \(bundleId))\(isActive)")
+        //     Logger.log("  - \(app.localizedName ?? "Unknown") (PID: \(app.processIdentifier), Bundle: \(bundleId))\(isActive)")
         // }
         
         // 获取前台应用（排除自己）
@@ -380,9 +380,9 @@ class WindowManager: ObservableObject {
         let targetApp: NSRunningApplication
         if let frontApp = frontmostApp {
             targetApp = frontApp
-            print("✅ 使用前台应用作为目标应用")
+            Logger.log("✅ Using frontmost application as target app")
         } else {
-            print("⚠️ 无法获取前台应用，尝试使用最前面的窗口对应的应用")
+            Logger.log("⚠️ Cannot get frontmost application, trying to use application of the frontmost window")
             
             // 找到第一个有效的可见窗口的应用（排除自己）
             // windowList已经按z-order排序（最前面的窗口在前）
@@ -397,26 +397,26 @@ class WindowManager: ObservableObject {
                     if let app = allApps.first(where: { $0.processIdentifier == processID }),
                        app.bundleIdentifier != Bundle.main.bundleIdentifier {
                         topWindowApp = app
-                        print("🔍 找到最前面窗口的应用: \(app.localizedName ?? "Unknown") (PID: \(processID))")
+                        Logger.log("🔍 Found application of frontmost window: \(app.localizedName ?? "Unknown") (PID: \(processID))")
                         break
                     }
                 }
             }
             
             guard let foundApp = topWindowApp else {
-                print("❌ 无法获取任何有效的目标应用")
+                Logger.log("❌ Cannot get any valid target application")
                 return
             }
             
             targetApp = foundApp
         }
         
-        print("\n🎯 目标应用: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
-        print("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
-        print("\n📋 系统总共找到 \(windowList.count) 个窗口")
+        Logger.log("\n🎯 Target application: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
+        Logger.log("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
+        Logger.log("\n📋 System found \(windowList.count) windows in total")
         
         // // 打印所有窗口信息
-        // print("\n🔍 所有窗口详情:")
+        // Logger.log("\n🔍 All window details:")
         // for (index, windowInfo) in windowList.enumerated() {
         //     let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t ?? -1
         //     let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
@@ -430,11 +430,11 @@ class WindowManager: ObservableObject {
             
         //     let isTarget = processID == targetApp.processIdentifier ? " ⭐ [TARGET]" : ""
             
-        //     print("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
-        //     print("       Owner: \(ownerName)")
-        //     print("       Title: '\(windowTitle)'\(isTarget)")
-        //     print("       ID: \(windowID)")
-        //     print("")
+        //     Logger.log("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
+        //     Logger.log("       Owner: \(ownerName)")
+        //     Logger.log("       Title: '\(windowTitle)'\(isTarget)")
+        //     Logger.log("       ID: \(windowID)")
+        //     Logger.log("")
         // }
         
                  // 筛选目标应用的窗口
@@ -454,11 +454,11 @@ class WindowManager: ObservableObject {
                 let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
                 let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
                 
-                print("🔎 检查目标应用窗口:")
-                print("   标题: '\(windowTitle)'")
-                print("   Layer: \(layer)")
-                print("   ID: \(windowID)")
-                print("   OnScreen: \(isOnScreen)")
+                Logger.log("🔎 Checking target application window:")
+                Logger.log("   Title: '\(windowTitle)'")
+                Logger.log("   Layer: \(layer)")
+                Logger.log("   ID: \(windowID)")
+                Logger.log("   OnScreen: \(isOnScreen)")
                 
                                  // 检查过滤条件 - 允许空标题
                  let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
@@ -468,7 +468,7 @@ class WindowManager: ObservableObject {
                  let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
                  let hasReasonableSize = width > 100 && height > 100 // 过滤掉太小的窗口
                  
-                 print("   过滤检查: ID=\(hasValidID), Layer=\(hasValidLayer), Size=\(width)x\(height), ReasonableSize=\(hasReasonableSize)")
+                 Logger.log("   Filter check: ID=\(hasValidID), Layer=\(hasValidLayer), Size=\(width)x\(height), ReasonableSize=\(hasReasonableSize)")
                  
                  if hasValidID && hasValidLayer && hasReasonableSize {
                     validWindows.append(windowInfo)
@@ -511,38 +511,38 @@ class WindowManager: ObservableObject {
                     )
                     
                     windows.append(window)
-                    print("   ✅ 窗口已添加: '\(projectName)'")
+                    Logger.log("   ✅ Window added: '\(projectName)'")
                     
                     validWindowIndex += 1  // 增加有效窗口索引
                 } else {
-                    print("   ❌ 窗口被过滤")
+                    Logger.log("   ❌ Window filtered out")
                 }
-                print("")
+                Logger.log("")
             }
         }
         
-                 print("📊 统计结果:")
-         print("   目标应用候选窗口: \(candidateWindows.count)")
-         print("   有效窗口: \(validWindows.count)")
-         print("   最终添加窗口: \(windows.count)")
-         print("=== 调试信息结束 ===\n")
+                 Logger.log("📊 Statistics result:")
+         Logger.log("   Target application candidate windows: \(candidateWindows.count)")
+         Logger.log("   Valid windows: \(validWindows.count)")
+         Logger.log("   Final added windows: \(windows.count)")
+         Logger.log("=== Debug Information End ===\n")
      }
      
-     // MARK: - CT2功能：获取所有应用的窗口信息
+     // MARK: - CT2 Functionality: Get Window Info for All Apps
      private func getAllAppsWithWindows() {
          apps.removeAll()
          // 不再全量清空AX缓存，让智能清理机制处理
          
-         print("\n=== CT2调试信息开始 ===")
+         Logger.log("\n=== CT2 Debug Information Start ===")
          
          // 获取所有运行的应用
          let allApps = NSWorkspace.shared.runningApplications
-         print("所有运行的应用总数: \(allApps.count)")
+         Logger.log("Total running applications: \(allApps.count)")
          
          // 获取所有窗口，按照前后顺序排列（最前面的窗口排在前面）
          // 这个顺序就是Command+Tab的真实顺序
          let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
-         print("系统总共找到 \(windowList.count) 个窗口")
+         Logger.log("System found \(windowList.count) windows in total")
          
          // 按应用组织窗口
          var appWindows: [pid_t: [WindowInfo]] = [:]
@@ -563,7 +563,7 @@ class WindowManager: ObservableObject {
              )
          }
          
-         print("有效应用数量: \(appInfoMap.count)")
+         Logger.log("Valid application count: \(appInfoMap.count)")
          
          // 处理所有窗口，按应用分组，同时记录应用首次出现的顺序
          var windowCounter = 1
@@ -677,13 +677,13 @@ class WindowManager: ObservableObject {
              return app1.appName.localizedCaseInsensitiveCompare(app2.appName) == .orderedAscending
          }
          
-         print("📊 CT2统计结果:")
-         print("   有效应用数量: \(apps.count)")
+         Logger.log("📊 CT2 Statistics result:")
+         Logger.log("   Valid application count: \(apps.count)")
          for (index, app) in apps.enumerated() {
              let activeStatus = app.isActive ? " [ACTIVE]" : ""
-             print("   \(index + 1). \(app.appName): \(app.windowCount) 个窗口\(activeStatus)")
+             Logger.log("   \(index + 1). \(app.appName): \(app.windowCount) windows\(activeStatus)")
          }
-         print("=== CT2调试信息结束 ===\n")
+         Logger.log("=== CT2 Debug Information End ===\n")
      }
      
      // 通过 AX API 获取特定窗口ID对应的标题和AXUIElement
@@ -693,15 +693,15 @@ class WindowManager: ObservableObject {
          var windowsRef: CFTypeRef?
          guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef) == .success,
                let axWindows = windowsRef as? [AXUIElement] else {
-             print("   ❌ 无法获取AX窗口列表")
+             Logger.log("   ❌ Cannot get AX window list")
              return ("", nil)
          }
          
-         print("   🔍 AX窗口总数: \(axWindows.count), 目标索引: \(windowIndex)")
+         Logger.log("   🔍 Total AX windows: \(axWindows.count), target index: \(windowIndex)")
          
          // 直接通过索引获取对应的AX窗口
          guard windowIndex < axWindows.count else {
-             print("   ❌ 窗口索引 \(windowIndex) 超出范围 (总数: \(axWindows.count))")
+             Logger.log("   ❌ Window index \(windowIndex) out of range (total: \(axWindows.count))")
              return ("", nil)
          }
          
@@ -711,50 +711,50 @@ class WindowManager: ObservableObject {
          var titleRef: CFTypeRef?
          if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
             let title = titleRef as? String {
-             print("   ✅ 窗口ID \(windowID) 通过索引[\(windowIndex)]匹配成功，标题: '\(title)'")
+             Logger.log("   ✅ Window ID \(windowID) matched successfully through index[\(windowIndex)], title: '\(title)'")
              return (title, axWindow)
          } else {
-             print("   ⚠️ 窗口ID \(windowID) 通过索引[\(windowIndex)]匹配成功，但无标题")
+             Logger.log("   ⚠️ Window ID \(windowID) matched successfully through index[\(windowIndex)], but no title")
              return ("", axWindow)
          }
      }
     
     
     private func activateWindow(_ window: WindowInfo) {
-        print("\n🎯 尝试激活窗口ID: \(window.windowID), 标题: '\(window.title)'")
+        Logger.log("\n🎯 Attempting to activate window ID: \(window.windowID), title: '\(window.title)'")
         
         // 优先使用AX增强方法
         if activateWindowWithAXEnhanced(window) {
-            print("   ✅ AX增强方法激活成功")
+            Logger.log("   ✅ AX enhanced activation successful")
             return
         }
         
-        print("   ⚠️ AX增强方法失败，尝试降级方案")
+        Logger.log("   ⚠️ AX enhanced method failed, trying fallback solution")
         
         // 降级方案1: 传统AX方法（保持向后兼容）
         let windowBounds = getWindowBounds(windowID: window.windowID)
         
         // 首先尝试从缓存中获取AXUIElement
         if let cachedElement = getCachedAXElement(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex) {
-            print("   ✅ 获取到AX元素（缓存或新建）")
+            Logger.log("   ✅ Got AX element (cached or new)")
             
             // 执行多显示器焦点转移和窗口激活
             if activateWindowWithFocusTransfer(axElement: cachedElement, windowBounds: windowBounds, window: window) {
-                print("   ✅ 窗口激活成功")
+                Logger.log("   ✅ Window activation successful")
                 return
             } else {
-                print("   ⚠️ AX元素激活失败")
+                Logger.log("   ⚠️ AX element activation failed")
             }
         }
         
-        print("   ❌ 无法获取窗口ID \(window.windowID) 的AX元素")
+        Logger.log("   ❌ Cannot get AX element for window ID \(window.windowID)")
         
         // 降级方案：尝试使用Core Graphics API
-        print("   🔄 尝试最终降级方案")
+        Logger.log("   🔄 Trying final fallback solution")
         fallbackActivateWindowWithFocusTransfer(window.windowID, processID: window.processID, windowBounds: windowBounds)
     }
     
-    // MARK: - AX增强的多显示器焦点转移支持
+    // MARK: - AX Enhanced Multi-Display Focus Transfer Support
     
     // 显示器信息结构
     struct DisplayInfo {
@@ -766,15 +766,15 @@ class WindowManager: ObservableObject {
     // AX增强的窗口激活方法（主入口）
     private func activateWindowWithAXEnhanced(_ window: WindowInfo) -> Bool {
         guard let axElement = getCachedAXElement(windowID: window.windowID, processID: window.processID, windowIndex: window.axWindowIndex) else {
-            print("   ❌ AX增强激活失败：无法获取AX元素")
+            Logger.log("   ❌ AX enhanced activation failed: cannot get AX element")
             return false
         }
         
-        print("   🔄 使用AX增强方法激活窗口")
+        Logger.log("   🔄 Using AX enhanced method to activate window")
         
         // 获取窗口显示器信息
         guard let displayInfo = getWindowDisplayInfo(axElement: axElement) else {
-            print("   ❌ AX增强激活失败：无法获取显示器信息")
+            Logger.log("   ❌ AX enhanced activation failed: cannot get display information")
             return false
         }
         
@@ -782,9 +782,9 @@ class WindowManager: ObservableObject {
         let currentScreen = getCurrentFocusedScreen()
         let needsCrossDisplayActivation = (displayInfo.screen != currentScreen)
         
-        print("   📍 窗口位置: \(displayInfo.windowRect)")
-        print("   🖥️ 目标显示器: \(displayInfo.screen.localizedName)")
-        print("   🔄 需要跨显示器激活: \(needsCrossDisplayActivation)")
+        Logger.log("   📍 Window position: \(displayInfo.windowRect)")
+        Logger.log("   🖥️ Target display: \(displayInfo.screen.localizedName)")
+        Logger.log("   🔄 Cross-display activation needed: \(needsCrossDisplayActivation)")
         
         if needsCrossDisplayActivation {
             return performCrossDisplayAXActivation(axElement: axElement, displayInfo: displayInfo, window: window)
@@ -799,7 +799,7 @@ class WindowManager: ObservableObject {
         var positionRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(axElement, kAXPositionAttribute as CFString, &positionRef) == .success,
               let positionValue = positionRef else {
-            print("   ⚠️ 无法获取窗口位置")
+            Logger.log("   ⚠️ Cannot get window position")
             return nil
         }
         
@@ -807,7 +807,7 @@ class WindowManager: ObservableObject {
         var sizeRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(axElement, kAXSizeAttribute as CFString, &sizeRef) == .success,
               let sizeValue = sizeRef else {
-            print("   ⚠️ 无法获取窗口大小")
+            Logger.log("   ⚠️ Cannot get window size")
             return nil
         }
         
@@ -817,7 +817,7 @@ class WindowManager: ObservableObject {
         
         guard AXValueGetValue(positionValue as! AXValue, .cgPoint, &point) == true,
               AXValueGetValue(sizeValue as! AXValue, .cgSize, &cgSize) == true else {
-            print("   ⚠️ AX值转换失败")
+            Logger.log("   ⚠️ AX value conversion failed")
             return nil
         }
         
@@ -826,7 +826,7 @@ class WindowManager: ObservableObject {
         
         // 找到包含此窗口的显示器
         guard let targetScreen = findScreenContaining(rect: windowRect) else {
-            print("   ⚠️ 无法找到包含窗口的显示器")
+            Logger.log("   ⚠️ Cannot find display containing window")
             return nil
         }
         
@@ -875,25 +875,25 @@ class WindowManager: ObservableObject {
     
     // 跨显示器激活窗口（AX增强方法）
     private func performCrossDisplayAXActivation(axElement: AXUIElement, displayInfo: DisplayInfo, window: WindowInfo) -> Bool {
-        print("   🚀 执行跨显示器AX激活")
+        Logger.log("   🚀 Executing cross-display AX activation")
         
         // 步骤1: 智能焦点转移到目标显示器
         if !transferFocusToDisplay(displayInfo: displayInfo) {
-            print("   ⚠️ 焦点转移失败，但继续尝试激活")
+            Logger.log("   ⚠️ Focus transfer failed, but continuing to try activation")
         }
         
         // 步骤2: 激活应用进程
         guard let app = NSRunningApplication(processIdentifier: window.processID) else {
-            print("   ❌ 无法获取应用进程")
+            Logger.log("   ❌ Cannot get application process")
             return false
         }
         
         let appActivated = app.activate()
-        print("   🎯 应用激活结果: \(appActivated ? "成功" : "失败")")
+        Logger.log("   🎯 Application activation result: \(appActivated ? "successful" : "failed")")
         
         // 步骤3: 使用AX API提升窗口
         let raiseResult = AXUIElementPerformAction(axElement, kAXRaiseAction as CFString)
-        print("   ⬆️ AX窗口提升结果: \(raiseResult == .success ? "成功" : "失败")")
+        Logger.log("   ⬆️ AX window raise result: \(raiseResult == .success ? "successful" : "failed")")
         
         // 步骤4: 设置窗口为焦点窗口
         AXUIElementSetAttributeValue(axElement, kAXMainAttribute as CFString, kCFBooleanTrue)
@@ -901,27 +901,27 @@ class WindowManager: ObservableObject {
         
         // 步骤5: 验证激活结果
         let success = verifyWindowActivation(axElement: axElement, displayInfo: displayInfo)
-        print("   ✅ 跨显示器激活\(success ? "成功" : "失败")")
+        Logger.log("   ✅ Cross-display activation \(success ? "successful" : "failed")")
         
         return success
     }
     
     // 同显示器激活窗口（AX增强方法）
     private func performSameDisplayAXActivation(axElement: AXUIElement, window: WindowInfo) -> Bool {
-        print("   🎯 执行同显示器AX激活")
+        Logger.log("   🎯 Executing same-display AX activation")
         
         // 步骤1: 激活应用进程
         guard let app = NSRunningApplication(processIdentifier: window.processID) else {
-            print("   ❌ 无法获取应用进程")
+            Logger.log("   ❌ Cannot get application process")
             return false
         }
         
         let appActivated = app.activate()
-        print("   🎯 应用激活结果: \(appActivated ? "成功" : "失败")")
+        Logger.log("   🎯 Application activation result: \(appActivated ? "successful" : "failed")")
         
         // 步骤2: 使用AX API提升窗口
         let raiseResult = AXUIElementPerformAction(axElement, kAXRaiseAction as CFString)
-        print("   ⬆️ AX窗口提升结果: \(raiseResult == .success ? "成功" : "失败")")
+        Logger.log("   ⬆️ AX window raise result: \(raiseResult == .success ? "successful" : "failed")")
         
         // 步骤3: 设置窗口为焦点窗口
         AXUIElementSetAttributeValue(axElement, kAXMainAttribute as CFString, kCFBooleanTrue)
@@ -932,7 +932,7 @@ class WindowManager: ObservableObject {
     
     // 智能焦点转移到目标显示器
     private func transferFocusToDisplay(displayInfo: DisplayInfo) -> Bool {
-        print("   🔄 转移焦点到显示器: \(displayInfo.screen.localizedName)")
+        Logger.log("   🔄 Transferring focus to display: \(displayInfo.screen.localizedName)")
         
         // 方法1: 精确鼠标定位
         let targetPoint = CGPoint(
@@ -947,7 +947,7 @@ class WindowManager: ObservableObject {
             mouseCursorPosition: targetPoint,
             mouseButton: .left
         ) else {
-            print("   ❌ 无法创建鼠标移动事件")
+            Logger.log("   ❌ Cannot create mouse movement event")
             return false
         }
         
@@ -957,7 +957,7 @@ class WindowManager: ObservableObject {
         // 短暂延迟确保焦点转移完成
         usleep(30000) // 30ms
         
-        print("   🖱️ 鼠标已移动到目标窗口位置: (\(targetPoint.x), \(targetPoint.y))")
+        Logger.log("   🖱️ Mouse moved to target window position: (\(targetPoint.x), \(targetPoint.y))")
         return true
     }
     
@@ -967,7 +967,7 @@ class WindowManager: ObservableObject {
         var isMainRef: CFTypeRef?
         if AXUIElementCopyAttributeValue(axElement, kAXMainAttribute as CFString, &isMainRef) == .success,
            let isMain = isMainRef as? Bool, isMain {
-            print("   ✅ 窗口已成为主窗口")
+            Logger.log("   ✅ Window has become main window")
             return true
         }
         
@@ -975,11 +975,11 @@ class WindowManager: ObservableObject {
         var isFocusedRef: CFTypeRef?
         if AXUIElementCopyAttributeValue(axElement, kAXFocusedAttribute as CFString, &isFocusedRef) == .success,
            let isFocused = isFocusedRef as? Bool, isFocused {
-            print("   ✅ 窗口已获得焦点")
+            Logger.log("   ✅ Window has gained focus")
             return true
         }
         
-        print("   ⚠️ 窗口激活验证未通过，但可能仍然成功")
+        Logger.log("   ⚠️ Window activation verification failed, but may still be successful")
         return false
     }
     
@@ -1014,12 +1014,12 @@ class WindowManager: ObservableObject {
         
         // 激活窗口
         let raiseResult = AXUIElementPerformAction(axElement, kAXRaiseAction as CFString)
-        print("   AXRaiseAction 结果: \(raiseResult == .success ? "成功" : "失败")")
+        Logger.log("   AXRaiseAction result: \(raiseResult == .success ? "successful" : "failed")")
         
         // 将应用置于前台
         if let app = NSRunningApplication(processIdentifier: window.processID) {
             let activateResult = app.activate()
-            print("   应用激活结果: \(activateResult ? "成功" : "失败")")
+            Logger.log("   Application activation result: \(activateResult ? "successful" : "failed")")
         }
         
         // 确保窗口获得焦点（通过AX API）
@@ -1069,15 +1069,15 @@ class WindowManager: ObservableObject {
         
         // 如果鼠标不在目标显示器上，移动到目标窗口的中心
         if let target = targetScreen, target != currentScreen {
-            print("   🖱️ 将鼠标从显示器 \(currentScreen?.localizedName ?? "未知") 移动到 \(target.localizedName)")
+            Logger.log("   🖱️ Moving mouse from display \(currentScreen?.localizedName ?? "unknown") to \(target.localizedName)")
             
             // 使用Core Graphics移动鼠标
             let moveEvent = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: windowCenter, mouseButton: .left)
             moveEvent?.post(tap: .cghidEventTap)
             
-            print("   🖱️ 鼠标已移动到窗口中心: (\(windowCenter.x), \(windowCenter.y))")
+            Logger.log("   🖱️ Mouse moved to window center: (\(windowCenter.x), \(windowCenter.y))")
         } else {
-            print("   🖱️ 鼠标已在目标显示器上，无需移动")
+            Logger.log("   🖱️ Mouse is already on target display, no need to move")
         }
     }
     
@@ -1094,13 +1094,13 @@ class WindowManager: ObservableObject {
         // 将应用置于前台
         if let app = NSRunningApplication(processIdentifier: processID) {
             let activateResult = app.activate()
-            print("   降级方案 - 应用激活结果: \(activateResult ? "成功" : "失败")")
+            Logger.log("   Fallback solution - Application activation result: \(activateResult ? "successful" : "failed")")
         }
         
         // 注意：Core Graphics没有直接激活特定窗口的API
         // 这里只能激活应用，让它自己决定显示哪个窗口
-        print("   ⚠️ 使用降级方案，只能激活应用，无法精确控制窗口")
-        print("   🖱️ 已将鼠标移动到目标窗口所在显示器以改善焦点转移")
+        Logger.log("   ⚠️ Using fallback solution, can only activate application, cannot precisely control window")
+        Logger.log("   🖱️ Mouse moved to target window's display to improve focus transfer")
     }
     
     // 降级方案：使用Core Graphics API激活窗口（保持向后兼容）
@@ -1108,15 +1108,15 @@ class WindowManager: ObservableObject {
         // 将应用置于前台
         if let app = NSRunningApplication(processIdentifier: processID) {
             let activateResult = app.activate()
-            print("   降级方案 - 应用激活结果: \(activateResult ? "成功" : "失败")")
+            Logger.log("   Fallback solution - Application activation result: \(activateResult ? "successful" : "failed")")
         }
         
         // 注意：Core Graphics没有直接激活特定窗口的API
         // 这里只能激活应用，让它自己决定显示哪个窗口
-        print("   ⚠️ 使用降级方案，只能激活应用，无法精确控制窗口")
+        Logger.log("   ⚠️ Using fallback solution, can only activate application, cannot precisely control window")
     }
     
-    // MARK: - 增强事件处理机制 (方案3)
+    // MARK: - Enhanced Event Handling Mechanism (Solution 3)
     
     /// 设置统一的事件处理机制，减少事件冲突
     private func setupUnifiedEventHandling() {
@@ -1137,7 +1137,7 @@ class WindowManager: ObservableObject {
             self?.handleUnifiedKeyEvent(event, isGlobal: true)
         }
         
-        print("🔧 统一事件处理机制已设置")
+        Logger.log("🔧 Unified event handling mechanism has been set up")
     }
     
     /// 统一的事件处理入口，减少竞态条件
@@ -1170,7 +1170,7 @@ class WindowManager: ObservableObject {
         case .keyUp:
             // ESC键关闭切换器
             if event.keyCode == 53 { // ESC key
-                print("🔴 [\(source)] 检测到ESC键，关闭DS2切换器")
+                Logger.log("🔴 [\(source)] ESC key detected, closing DS2 switcher")
                 hideSwitcherAsync()
                 return nil
             }
@@ -1182,13 +1182,13 @@ class WindowManager: ObservableObject {
                     let isShiftPressed = event.modifierFlags.contains(.shift)
                     
                     if isShiftPressed {
-                        print("🟢 [\(source)] DS2反向切换: \(currentWindowIndex) -> ", terminator: "")
+                        Logger.log("🟢 [\(source)] DS2 reverse switch: \(currentWindowIndex) -> ", terminator: "")
                         moveToPreviousWindow()
-                        print("\(currentWindowIndex)")
+                        Logger.log("\(currentWindowIndex)")
                     } else {
-                        print("🟢 [\(source)] DS2正向切换: \(currentWindowIndex) -> ", terminator: "")
+                        Logger.log("🟢 [\(source)] DS2 forward switch: \(currentWindowIndex) -> ", terminator: "")
                         moveToNextWindow()
-                        print("\(currentWindowIndex)")
+                        Logger.log("\(currentWindowIndex)")
                     }
                     return nil // 阻止事件传递
                 }
@@ -1207,7 +1207,7 @@ class WindowManager: ObservableObject {
             lastModifierEventTime = now
             
             if !event.modifierFlags.contains(settings.modifierKey.eventModifier) {
-                print("🔴 [\(source)] 检测到\(settings.modifierKey.displayName)键松开，关闭DS2切换器")
+                Logger.log("🔴 [\(source)] \(settings.modifierKey.displayName) key release detected, closing DS2 switcher")
                 hideSwitcherAsync()
                 return nil
             }
@@ -1227,7 +1227,7 @@ class WindowManager: ObservableObject {
         case .keyUp:
             // ESC键关闭切换器
             if event.keyCode == 53 { // ESC key
-                print("🔴 [\(source)] 检测到ESC键，关闭CT2切换器")
+                Logger.log("🔴 [\(source)] ESC key detected, closing CT2 switcher")
                 hideAppSwitcherAsync()
                 return nil
             }
@@ -1239,11 +1239,11 @@ class WindowManager: ObservableObject {
                     let isShiftPressed = event.modifierFlags.contains(.shift)
                     
                     if isShiftPressed {
-                        print("🟢 [\(source)] CT2反向切换: \(currentAppIndex) -> ", terminator: "")
+                        Logger.log("🟢 [\(source)] CT2 reverse switch: \(currentAppIndex) -> ", terminator: "")
                         moveToPreviousApp()
                         print("\(currentAppIndex)")
                     } else {
-                        print("🟢 [\(source)] CT2正向切换: \(currentAppIndex) -> ", terminator: "")
+                        Logger.log("🟢 [\(source)] CT2 forward switch: \(currentAppIndex) -> ", terminator: "")
                         moveToNextApp()
                         print("\(currentAppIndex)")
                     }
@@ -1264,7 +1264,7 @@ class WindowManager: ObservableObject {
             lastModifierEventTime = now
             
             if !event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
-                print("🔴 [\(source)] 检测到\(settings.ct2ModifierKey.displayName)键松开，关闭CT2切换器")
+                Logger.log("🔴 [\(source)] \(settings.ct2ModifierKey.displayName) key release detected, closing CT2 switcher")
                 hideAppSwitcherAsync()
                 return nil
             }
@@ -1288,13 +1288,13 @@ class WindowManager: ObservableObject {
         }
     }
     
-    // MARK: - 异步窗口激活优化 (方案2)
+    // MARK: - Async Window Activation Optimization (Solution 2)
     
     /// 异步版本的DS2切换器隐藏方法，提供更流畅的体验
     private func hideSwitcherAsync() {
         guard isShowingSwitcher else { return }
         
-        print("🚀 异步隐藏DS2切换器开始")
+        Logger.log("🚀 Async DS2 switcher hiding started")
         
         // 立即隐藏UI，给用户即时反馈
         isShowingSwitcher = false
@@ -1320,7 +1320,7 @@ class WindowManager: ObservableObject {
         // 异步激活窗口，避免阻塞UI
         if currentWindowIndex < windows.count {
             let targetWindow = windows[currentWindowIndex]
-            print("🎯 准备异步激活窗口: \(targetWindow.title)")
+            Logger.log("🎯 Preparing async window activation: \(targetWindow.title)")
             
             // 使用用户初始优先级确保响应性
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -1328,14 +1328,14 @@ class WindowManager: ObservableObject {
             }
         }
         
-        print("🚀 DS2切换器UI已隐藏，窗口激活异步进行中")
+        Logger.log("🚀 DS2 switcher UI hidden, window activation in progress asynchronously")
     }
     
     /// 异步版本的CT2切换器隐藏方法，提供更流畅的体验
     private func hideAppSwitcherAsync() {
         guard isShowingAppSwitcher else { return }
         
-        print("🚀 异步隐藏CT2切换器开始")
+        Logger.log("🚀 Async CT2 switcher hiding started")
         
         // 立即隐藏UI，给用户即时反馈
         isShowingAppSwitcher = false
@@ -1363,7 +1363,7 @@ class WindowManager: ObservableObject {
         
         // 异步激活应用，避免阻塞UI
         if currentAppIndex < apps.count, let firstWindow = apps[currentAppIndex].firstWindow {
-            print("🎯 准备异步激活应用: \(apps[currentAppIndex].appName)")
+            Logger.log("🎯 Preparing async application activation: \(apps[currentAppIndex].appName)")
             
             // 使用用户初始优先级确保响应性
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -1371,23 +1371,23 @@ class WindowManager: ObservableObject {
             }
         }
         
-        print("🚀 CT2切换器UI已隐藏，应用激活异步进行中")
+        Logger.log("🚀 CT2 switcher UI hidden, application activation in progress asynchronously")
     }
     
     /// 异步窗口激活方法，优化性能和流畅度
     private func activateWindowAsync(_ window: WindowInfo) {
-        print("🚀 异步激活窗口开始: \(window.title)")
+        Logger.log("🚀 Async window activation started: \(window.title)")
         
         // 首先尝试快速激活应用
         guard let app = NSRunningApplication(processIdentifier: window.processID) else {
-            print("❌ 无法找到进程ID \(window.processID) 对应的应用")
+            Logger.log("❌ Cannot find application corresponding to process ID \(window.processID)")
             return
         }
         
         // 在主线程激活应用（系统要求）
         DispatchQueue.main.async {
             let activated = app.activate()
-            print("   📱 应用激活结果: \(activated ? "成功" : "失败")")
+            Logger.log("   📱 Application activation result: \(activated ? "successful" : "failed")")
         }
         
         // 短暂延迟后激活具体窗口
@@ -1398,7 +1398,7 @@ class WindowManager: ObservableObject {
     
     /// 快速窗口激活方法，简化复杂的多显示器处理
     private func activateSpecificWindowFast(_ window: WindowInfo) {
-        print("⚡ 快速激活具体窗口: \(window.title)")
+        Logger.log("⚡ Fast activation of specific window: \(window.title)")
         
         // 尝试从缓存获取AX元素
         if let axElement = getCachedAXElement(
@@ -1408,19 +1408,19 @@ class WindowManager: ObservableObject {
         ) {
             // 使用AX API激活窗口
             let raiseResult = AXUIElementPerformAction(axElement, kAXRaiseAction as CFString)
-            print("   ⚡ AX激活结果: \(raiseResult == .success ? "成功" : "失败")")
+            Logger.log("   ⚡ AX activation result: \(raiseResult == .success ? "successful" : "failed")")
             
             if raiseResult == .success {
                 // 尝试设置为主窗口和焦点窗口
                 AXUIElementSetAttributeValue(axElement, kAXMainAttribute as CFString, kCFBooleanTrue)
                 AXUIElementSetAttributeValue(axElement, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-                print("   ✅ 窗口激活完成")
+                Logger.log("   ✅ Window activation completed")
                 return
             }
         }
         
         // 如果AX方法失败，使用降级方案
-        print("   ⚠️ AX方法失败，使用降级方案")
+        Logger.log("   ⚠️ AX method failed, using fallback solution")
         fallbackActivateAsync(window)
     }
     
@@ -1429,14 +1429,14 @@ class WindowManager: ObservableObject {
         // 简化的降级方案，只激活应用
         if let app = NSRunningApplication(processIdentifier: window.processID) {
             app.activate()
-            print("   📱 降级方案：应用已激活")
+            Logger.log("   📱 Fallback solution: application activated")
         }
         
         // 可选：尝试通过窗口ID进行基本操作（如果需要）
         // 这里可以添加其他轻量级的窗口操作
     }
     
-    // MARK: - 修饰键看门狗机制
+    // MARK: - Modifier Key Watchdog Mechanism
     
     /// 启动修饰键看门狗，提供双重保险机制
     /// - Parameter switcherType: 切换器类型（DS2或CT2）
@@ -1454,11 +1454,11 @@ class WindowManager: ObservableObject {
         let shouldUseWatchdog = timeSinceLastSwitch < 2.0 // 2秒内的操作启用看门狗
         
         if !shouldUseWatchdog {
-            print("🐕 看门狗：非快速切换场景，跳过启动")
+            Logger.log("🐕 Watchdog: not a fast switching scenario, skipping startup")
             return
         }
         
-        print("🐕 启动修饰键看门狗，类型: \(switcherType == .ds2 ? "DS2" : "CT2"), 间隔: \(Int(watchdogInterval * 1000))ms")
+        Logger.log("🐕 Starting modifier key watchdog, type: \(switcherType == .ds2 ? "DS2" : "CT2"), interval: \(Int(watchdogInterval * 1000))ms")
         
         modifierKeyWatchdog = Timer.scheduledTimer(withTimeInterval: watchdogInterval, repeats: true) { [weak self] _ in
             self?.checkModifierKeyState(for: switcherType)
@@ -1469,7 +1469,7 @@ class WindowManager: ObservableObject {
     private func stopModifierKeyWatchdog() {
         guard let watchdog = modifierKeyWatchdog else { return }
         
-        print("🐕 停止修饰键看门狗，运行时间: \(String(format: "%.1f", Double(watchdogCallCount) * watchdogInterval))s，检测次数: \(watchdogCallCount)")
+        Logger.log("🐕 Stopping modifier key watchdog, runtime: \(String(format: "%.1f", Double(watchdogCallCount) * watchdogInterval))s, detection count: \(watchdogCallCount)")
         
         watchdog.invalidate()
         modifierKeyWatchdog = nil
@@ -1485,7 +1485,7 @@ class WindowManager: ObservableObject {
         
         // 性能保护：超时自动停止（16秒或1000次检测）
         if watchdogCallCount > 1000 {
-            print("🐕⚠️ 看门狗超时自动停止（1000次检测）")
+            Logger.log("🐕⚠️ Watchdog timeout auto-stop (1000 detections)")
             stopModifierKeyWatchdog()
             return
         }
@@ -1512,14 +1512,14 @@ class WindowManager: ObservableObject {
         
         // 如果切换器已经不活跃，停止看门狗
         if !isActive {
-            print("🐕 看门狗检测到切换器已关闭，自动停止")
+            Logger.log("🐕 Watchdog detected switcher closed, auto-stopping")
             stopModifierKeyWatchdog()
             return
         }
         
         // 检查修饰键是否仍在按下状态
         if !currentModifiers.contains(requiredModifier) {
-            print("🐕🚨 [看门狗检测] \(modifierName)键已松开，立即关闭\(switcherType == .ds2 ? "DS2" : "CT2")切换器")
+            Logger.log("🐕🚨 [Watchdog Detection] \(modifierName) key released, immediately closing \(switcherType == .ds2 ? "DS2" : "CT2") switcher")
             stopModifierKeyWatchdog()
             
             // 在主线程执行关闭操作
@@ -1536,7 +1536,7 @@ class WindowManager: ObservableObject {
         
         // 可选：动态调整检测频率（前10次检测使用高频率）
         if watchdogPhase == 10 {
-            print("🐕 看门狗进入低频模式")
+            Logger.log("🐕 Watchdog entering low frequency mode")
             stopModifierKeyWatchdog()
             
             // 重新启动低频看门狗
@@ -1547,7 +1547,7 @@ class WindowManager: ObservableObject {
         
         // 每100次检测输出一次状态（约1.6秒）
         if watchdogCallCount % 100 == 0 {
-            print("🐕 看门狗运行正常，已检测\(watchdogCallCount)次，\(modifierName)键状态: 按下中")
+            Logger.log("🐕 Watchdog running normally, detected \(watchdogCallCount) times, \(modifierName) key status: pressed")
         }
     }
 } 

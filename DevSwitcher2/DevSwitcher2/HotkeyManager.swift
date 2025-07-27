@@ -11,20 +11,20 @@ import AppKit
 
 class HotkeyManager {
     private var eventHotKeyRef: EventHotKeyRef?
-    private var ct2EventHotKeyRef: EventHotKeyRef?  // CT2热键引用
+    private var ct2EventHotKeyRef: EventHotKeyRef?  // Hotkey reference for CT2
     private let windowManager: WindowManager
     private var eventHandler: EventHandlerRef?
     private let settingsManager = SettingsManager.shared
     
-    // CGEventTap相关
+    // CGEventTap related properties
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var isShowingCT2Switcher = false  // 跟踪CT2切换器是否正在显示
+    private var isShowingCT2Switcher = false  // Tracks if the CT2 switcher is currently visible
     
     init(windowManager: WindowManager) {
         self.windowManager = windowManager
         
-        // 监听快捷键设置变化
+        // Listen for hotkey settings changes
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(hotkeySettingsChanged),
@@ -40,7 +40,7 @@ class HotkeyManager {
     }
     
     @objc private func hotkeySettingsChanged() {
-        print("快捷键设置已更改，重新注册热键")
+        Logger.log("Hotkey settings changed, re-registering hotkeys.")
         unregisterHotkey()
         registerHotkey()
     }
@@ -48,14 +48,14 @@ class HotkeyManager {
     func registerHotkey() {
         let settings = settingsManager.settings
         
-        // 注册DS2热键
+        // Register DS2 hotkey
         registerDS2Hotkey()
         
-        // 注册CT2热键（如果启用）
+        // Register CT2 hotkey if enabled
         if settings.ct2Enabled {
             registerCT2Hotkey()
             
-            // 如果CT2是Command+Tab，启动EventTap来拦截系统事件
+            // If CT2 is Command+Tab, start the EventTap to intercept system events
             if needsEventTapForCT2() {
                 startEventTap()
             }
@@ -63,19 +63,19 @@ class HotkeyManager {
     }
     
     private func registerDS2Hotkey() {
-        // 定义DS2热键 ID
+        // Define DS2 hotkey ID
         let hotkeyId = EventHotKeyID(signature: OSType(0x44455653), id: 1) // 'DEVS'
         
-        // 从设置中获取快捷键配置
+        // Get hotkey configuration from settings
         let settings = settingsManager.settings
         let keyCode = settings.triggerKey.keyCode
         let modifiers = settings.modifierKey.carbonModifier
         
-        print("注册DS2热键: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
+        Logger.log("Registering DS2 hotkey: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
         
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         
-        // 安装事件处理器（如果还没有安装）
+        // Install the event handler if it hasn't been installed yet
         if eventHandler == nil {
             let result = InstallEventHandler(GetApplicationEventTarget(), { (handler, event, userData) -> OSStatus in
                 guard let userData = userData else { return OSStatus(eventNotHandledErr) }
@@ -92,50 +92,50 @@ class HotkeyManager {
             }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
             
             if result != noErr {
-                print("Install event handler failed: \(result)")
+                Logger.log("Install event handler failed: \(result)")
                 return
             }
         }
         
-        // 注册DS2热键
+        // Register the DS2 hotkey
         let registerResult = RegisterEventHotKey(keyCode, modifiers, hotkeyId, GetApplicationEventTarget(), 0, &eventHotKeyRef)
         
         if registerResult == noErr {
-            print("DS2热键注册成功")
+            Logger.log("DS2 hotkey registered successfully.")
         } else {
-            print("DS2热键注册失败: \(registerResult)")
+            Logger.log("Failed to register DS2 hotkey: \(registerResult)")
         }
     }
     
     private func registerCT2Hotkey() {
-        // 定义CT2热键 ID
+        // Define CT2 hotkey ID
         let ct2HotkeyId = EventHotKeyID(signature: OSType(0x43543253), id: 2) // 'CT2S'
         
-        // 从设置中获取CT2快捷键配置
+        // Get CT2 hotkey configuration from settings
         let settings = settingsManager.settings
         let keyCode = settings.ct2TriggerKey.keyCode
         let modifiers = settings.ct2ModifierKey.carbonModifier
         
-        print("注册CT2热键: \(settings.ct2ModifierKey.displayName) + \(settings.ct2TriggerKey.displayName)")
+        Logger.log("Registering CT2 hotkey: \(settings.ct2ModifierKey.displayName) + \(settings.ct2TriggerKey.displayName)")
         
-        // 注册CT2热键
+        // Register the CT2 hotkey
         let registerResult = RegisterEventHotKey(keyCode, modifiers, ct2HotkeyId, GetApplicationEventTarget(), 0, &ct2EventHotKeyRef)
         
         if registerResult == noErr {
-            print("CT2热键注册成功")
+            Logger.log("CT2 hotkey registered successfully.")
         } else {
-            print("CT2热键注册失败: \(registerResult)")
+            Logger.log("Failed to register CT2 hotkey: \(registerResult)")
         }
     }
     
     func unregisterHotkey() {
-        // 注销DS2热键
+        // Unregister DS2 hotkey
         if let eventHotKeyRef = eventHotKeyRef {
             UnregisterEventHotKey(eventHotKeyRef)
             self.eventHotKeyRef = nil
         }
         
-        // 注销CT2热键
+        // Unregister CT2 hotkey
         if let ct2EventHotKeyRef = ct2EventHotKeyRef {
             UnregisterEventHotKey(ct2EventHotKeyRef)
             self.ct2EventHotKeyRef = nil
@@ -146,32 +146,32 @@ class HotkeyManager {
             self.eventHandler = nil
         }
         
-        // 停止EventTap
+        // Stop the EventTap
         stopEventTap()
     }
     
-    // 暂时禁用热键（当切换器窗口显示时）
+    // Temporarily disable the hotkey (e.g., when the switcher window is visible)
     func temporarilyDisableHotkey() {
-        // 禁用DS2热键
+        // Disable DS2 hotkey
         if let eventHotKeyRef = eventHotKeyRef {
             UnregisterEventHotKey(eventHotKeyRef)
             self.eventHotKeyRef = nil
-            print("🔴 暂时禁用DS2全局热键")
+            Logger.log("🔴 Temporarily disabled DS2 global hotkey")
         }
         
-        // 禁用CT2热键
+        // Disable CT2 hotkey
         if let ct2EventHotKeyRef = ct2EventHotKeyRef {
             UnregisterEventHotKey(ct2EventHotKeyRef)
             self.ct2EventHotKeyRef = nil
-            print("🔴 暂时禁用CT2全局热键")
+            Logger.log("🔴 Temporarily disabled CT2 global hotkey")
         }
     }
     
-    // 重新启用热键（当切换器窗口关闭时）
+    // Re-enable the hotkey (e.g., when the switcher window is closed)
     func reEnableHotkey() {
         let settings = settingsManager.settings
         
-        // 重新启用DS2热键
+        // Re-enable DS2 hotkey
         if eventHotKeyRef == nil {
             let hotkeyId = EventHotKeyID(signature: OSType(0x44455653), id: 1) // 'DEVS'
             let keyCode = settings.triggerKey.keyCode
@@ -180,13 +180,13 @@ class HotkeyManager {
             let registerResult = RegisterEventHotKey(keyCode, modifiers, hotkeyId, GetApplicationEventTarget(), 0, &eventHotKeyRef)
             
             if registerResult == noErr {
-                print("🟢 重新启用DS2全局热键: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
+                Logger.log("🟢 Re-enabled DS2 global hotkey: \(settings.modifierKey.displayName) + \(settings.triggerKey.displayName)")
             } else {
-                print("❌ 重新启用DS2全局热键失败: \(registerResult)")
+                Logger.log("❌ Failed to re-enable DS2 global hotkey: \(registerResult)")
             }
         }
         
-        // 重新启用CT2热键（如果启用）
+        // Re-enable CT2 hotkey if enabled
         if settings.ct2Enabled && ct2EventHotKeyRef == nil {
             let ct2HotkeyId = EventHotKeyID(signature: OSType(0x43543253), id: 2) // 'CT2S'
             let keyCode = settings.ct2TriggerKey.keyCode
@@ -195,12 +195,12 @@ class HotkeyManager {
             let registerResult = RegisterEventHotKey(keyCode, modifiers, ct2HotkeyId, GetApplicationEventTarget(), 0, &ct2EventHotKeyRef)
             
             if registerResult == noErr {
-                print("🟢 重新启用CT2全局热键: \(settings.ct2ModifierKey.displayName) + \(settings.ct2TriggerKey.displayName)")
+                Logger.log("🟢 Re-enabled CT2 global hotkey: \(settings.ct2ModifierKey.displayName) + \(settings.ct2TriggerKey.displayName)")
             } else {
-                print("❌ 重新启用CT2全局热键失败: \(registerResult)")
+                Logger.log("❌ Failed to re-enable CT2 global hotkey: \(registerResult)")
             }
             
-            // 如果需要EventTap，重新启动
+            // Restart EventTap if needed
             if needsEventTapForCT2() {
                 startEventTap()
             }
@@ -209,11 +209,11 @@ class HotkeyManager {
     
     private func handleHotkey(_ hotKeyID: EventHotKeyID) {
         DispatchQueue.main.async {
-            // 根据热键ID判断是DS2还是CT2
+            // Determine which hotkey was pressed based on its ID
             if hotKeyID.signature == OSType(0x44455653) && hotKeyID.id == 1 { // 'DEVS', DS2
                 self.windowManager.showWindowSwitcher()
             } else if hotKeyID.signature == OSType(0x43543253) && hotKeyID.id == 2 { // 'CT2S', CT2
-                // 检查CT2是否启用
+                // Check if CT2 is enabled
                 if self.settingsManager.settings.ct2Enabled {
                     self.windowManager.showAppSwitcher()
                 }
@@ -221,16 +221,16 @@ class HotkeyManager {
         }
     }
     
-    // MARK: - CGEventTap实现
+    // MARK: - CGEventTap Implementation
     
     private func needsEventTapForCT2() -> Bool {
         let settings = settingsManager.settings
-        // 检查是否为系统保留的热键组合
+        // Check if the hotkey combination is reserved by the system
         return settings.ct2ModifierKey == .command && settings.ct2TriggerKey == .tab
     }
     
     private func startEventTap() {
-        // 停止现有的EventTap
+        // Stop any existing EventTap
         stopEventTap()
         
         let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
@@ -247,7 +247,7 @@ class HotkeyManager {
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            print("❌ 无法创建EventTap，可能需要辅助功能权限")
+            Logger.log("❌ Failed to create EventTap, Accessibility permissions may be required.")
             return
         }
         
@@ -257,7 +257,7 @@ class HotkeyManager {
         CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: eventTap, enable: true)
         
-        print("✅ EventTap已启动，用于拦截系统Command+Tab")
+        Logger.log("✅ EventTap started to intercept system Command+Tab.")
     }
     
     private func stopEventTap() {
@@ -269,54 +269,54 @@ class HotkeyManager {
         if let eventTap = eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
             self.eventTap = nil
-            print("🔴 EventTap已停止")
+            Logger.log("🔴 EventTap stopped.")
         }
     }
     
     private func handleEventTap(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         let settings = settingsManager.settings
         
-        // 检查是否是我们感兴趣的事件
+        // Check if it's an event we are interested in
         if type == .keyDown && settings.ct2Enabled {
             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
             let flags = event.flags
             
-            // 检查是否匹配CT2热键
+            // Check if it matches the CT2 hotkey
             if keyCode == Int64(settings.ct2TriggerKey.keyCode) &&
                flags.contains(settings.ct2ModifierKey.cgEventFlags) {
                 
-                // 检查是否按下了Shift键
+                // Check if the Shift key is also pressed
                 let isShiftPressed = flags.contains(.maskShift)
                 
-                print("🎯 EventTap拦截到CT2热键: \(settings.ct2ModifierKey.displayName) + \(isShiftPressed ? "Shift+" : "")\(settings.ct2TriggerKey.displayName)")
+                Logger.log("🎯 EventTap intercepted CT2 hotkey: \(settings.ct2ModifierKey.displayName) + \(isShiftPressed ? "Shift+" : "")\(settings.ct2TriggerKey.displayName)")
                 
-                // 在主线程执行
+                // Execute on the main thread
                 DispatchQueue.main.async {
                     if self.isShowingCT2Switcher {
-                        // 如果切换器已经显示，则根据Shift键决定方向
+                        // If the switcher is already visible, navigate based on the Shift key
                         if isShiftPressed {
                             self.windowManager.selectPreviousApp()
                         } else {
                             self.windowManager.selectNextApp()
                         }
                     } else {
-                        // 第一次按下，显示切换器
+                        // First press, show the switcher
                         self.isShowingCT2Switcher = true
                         self.windowManager.showAppSwitcher()
                     }
                 }
                 
-                // 阻止事件继续传播到系统
+                // Suppress the event from propagating to the system
                 return nil
             }
         } else if type == .flagsChanged {
-            // 监听修饰键释放
+            // Listen for modifier key release
             let flags = event.flags
             
             if settings.ct2Enabled && isShowingCT2Switcher {
-                // 检查Command键是否被释放
+                // Check if the Command key was released
                 if !flags.contains(settings.ct2ModifierKey.cgEventFlags) {
-                    print("🔄 检测到修饰键释放，激活选中的应用")
+                    Logger.log("🔄 Modifier key released, activating selected app.")
                     
                     DispatchQueue.main.async {
                         self.isShowingCT2Switcher = false
@@ -326,12 +326,13 @@ class HotkeyManager {
             }
         }
         
-        // 让其他事件正常传播
+        // Allow other events to pass through normally
         return Unmanaged.passUnretained(event)
     }
     
-    // MARK: - WindowManager状态同步
+    // MARK: - WindowManager State Sync
     func resetCT2SwitcherState() {
         isShowingCT2Switcher = false
     }
-} 
+}
+ 

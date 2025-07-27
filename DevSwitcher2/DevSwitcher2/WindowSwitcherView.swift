@@ -10,6 +10,7 @@ import Foundation
 
 struct WindowSwitcherView: View {
     @ObservedObject var windowManager: WindowManager
+    @State private var hoveredIndex: Int? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -27,7 +28,7 @@ struct WindowSwitcherView: View {
     // MARK: - Header View
     private var headerView: some View {
         HStack {
-            Image(systemName: "rectangle.3.group")
+            Image(systemName: "rectangle.2.swap").symbolEffect(.breathe.plain.byLayer, options: .repeat(.continuous))
                 .foregroundColor(.accentColor)
                 .font(.title2)
             
@@ -54,16 +55,13 @@ struct WindowSwitcherView: View {
                     WindowRowView(
                         window: window,
                         isSelected: index == windowManager.currentWindowIndex,
+                        isHovered: index == hoveredIndex,
                         onTap: {
                             windowManager.selectWindow(at: index)
                         }
                     )
-                    .background(index == windowManager.currentWindowIndex ? 
-                              Color.accentColor.opacity(0.1) : Color.clear)
                     .onHover { isHovering in
-                        if isHovering {
-                            windowManager.currentWindowIndex = index
-                        }
+                        hoveredIndex = isHovering ? index : nil
                     }
                 }
             }
@@ -93,20 +91,15 @@ struct WindowSwitcherView: View {
 struct WindowRowView: View {
     let window: WindowInfo
     let isSelected: Bool
+    let isHovered: Bool
     let onTap: () -> Void
     
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
-                // 应用图标占位符
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.accentColor.opacity(0.2))
+                // 应用图标
+                AppIconView(processID: window.processID)
                     .frame(width: 48, height: 48)
-                    .overlay(
-                        Image(systemName: "app.dashed")
-                            .foregroundColor(.accentColor)
-                            .font(.title2)
-                    )
                 
                 VStack(alignment: .leading, spacing: 4) {
                     // 项目名（主要显示）
@@ -145,18 +138,52 @@ struct WindowRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
-        .background(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
+        .background(backgroundColor)
+    }
+    
+    private var backgroundColor: Color {
+        if isSelected {
+            return Color.accentColor.opacity(0.15)
+        } else if isHovered {
+            return Color.accentColor.opacity(0.05)
+        } else {
+            return Color.clear
+        }
+    }
+}
+
+struct AppIconView: View {
+    let processID: pid_t
+    @StateObject private var iconCache = AppIconCache.shared
+    
+    var body: some View {
+        Group {
+            if let icon = iconCache.getIcon(for: processID) {
+                Image(nsImage: icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(0.2))
+                    .overlay(
+                        Image(systemName: "app.dashed")
+                            .foregroundColor(.accentColor)
+                            .font(.title2)
+                    )
+            }
+        }
     }
 }
 
 #Preview {
     WindowSwitcherView(windowManager: {
         let manager = WindowManager()
-        // manager.windows = [
-        //     // WindowInfo(windowID: 1, title: "main.swift — DevSwitcher2 — Edited", projectName: "DevSwitcher2", appName: "Xcode", processID: 1234, axWindowIndex: 0),
-        //     // WindowInfo(windowID: 2, title: "README.md - MyProject", projectName: "MyProject", appName: "VS Code", processID: 5678, axWindowIndex: 1),
-        //     // WindowInfo(windowID: 3, title: "[WebApp] - index.html", projectName: "WebApp", appName: "IntelliJ IDEA", processID: 9012, axWindowIndex: 2)
-        // ]
+        manager.windows = [
+            WindowInfo(windowID: 1, title: "main.swift — DevSwitcher2 — Edited", projectName: "DevSwitcher2", appName: "Xcode", processID: 1234, axWindowIndex: 0),
+            WindowInfo(windowID: 2, title: "README.md - MyProject", projectName: "MyProject", appName: "VS Code", processID: 5678, axWindowIndex: 1),
+            WindowInfo(windowID: 3, title: "[WebApp] - index.html", projectName: "WebApp", appName: "IntelliJ IDEA", processID: 9012, axWindowIndex: 2)
+        ]
         return manager
     }())
     .frame(width: 600, height: 400)

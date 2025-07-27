@@ -78,6 +78,9 @@ class WindowManager: ObservableObject {
     func showWindowSwitcher() {
         guard !isShowingSwitcher else { return }
         
+        // 清除应用图标缓存，确保图标信息最新
+        AppIconCache.shared.clearCache()
+        
         // 获取当前应用的窗口
         getCurrentAppWindows()
         
@@ -126,6 +129,9 @@ class WindowManager: ObservableObject {
         
         // 重新启用全局热键
         hotkeyManager?.reEnableHotkey()
+        
+        // 清除应用图标缓存
+        AppIconCache.shared.clearCache()
         
         // 激活选中的窗口
         if currentWindowIndex < windows.count {

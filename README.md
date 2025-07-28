@@ -185,26 +185,3 @@ A: Restart the app or reset settings to default values
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Thanks to Apple for providing powerful macOS development frameworks
-- Thanks to the open source community for inspiration and support
-- Thanks to all users for their feedback and suggestions
-
-## 📞 Contact
-
-- **Author**: River
-- **GitHub**: [@vaspike](https://github.com/vaspike)
-- **Bug Reports**: [GitHub Issues](https://github.com/vaspike/DevSwitcher2/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/vaspike/DevSwitcher2/discussions)
-
----
-
-<div align="center">
-
-**If DevSwitcher2 helps you, please give us a ⭐️**
-
-Made with ❤️ by River
-
-</div> 

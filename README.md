@@ -60,13 +60,23 @@ A modern menu bar application that enhances window and application switching exp
 
 ### Installation Methods
 
-#### Method 1: Download Release
+#### Method 1: Brew install
+
+```bash
+# Install
+brew tap vaspike/devswitcher2 && brew install --cask DevSwitcher2
+
+# uninstall
+brew uninstall devswitcher2
+```
+
+#### Method 2: Download Release
 1. Visit the [Releases page](https://github.com/vaspike/DevSwitcher2/releases)
 2. Download the latest `DevSwitcher2.dmg`
 3. Open the dmg file and drag the app to Applications folder
 4. Launch the app and grant necessary permissions
 
-#### Method 2: Build from Source
+#### Method 1: Build from Source
 ```bash
 # Clone repository
 git clone https://github.com/vaspike/DevSwitcher2.git

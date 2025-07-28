@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.0.1-blue?style=for-the-badge)
+![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.1-blue?style=for-the-badge)
 [![macOS](https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
@@ -43,7 +43,13 @@
 
 ## 📸 预览
 
-> 待补充
+![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
+
+![1448X1002/1.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/2ifI/1448X1002/1.png)
+
+![2002X1436/4.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/z493/2002X1436/4.png)
+
+![3.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/Mamo/3574X2316/3.png/webp)
 
 </div>
 

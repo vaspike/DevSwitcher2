@@ -8,6 +8,8 @@
 	<string>DevSwitcher2</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -17,13 +19,15 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0.1</string>
+	<string>2.0.2</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>DevSwitcher2 需要辅助功能权限来获取和切换应用窗口，以提供增强的 Command+` 功能。</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2025 DevSwitcher2. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
@@ -32,9 +36,5 @@
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
-	<key>NSAccessibilityUsageDescription</key>
-	<string>DevSwitcher2 需要辅助功能权限来获取和切换应用窗口，以提供增强的 Command+` 功能。</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon.icns</string>
 </dict>
 </plist>

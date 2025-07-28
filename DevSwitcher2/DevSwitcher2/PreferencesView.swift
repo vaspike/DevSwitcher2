@@ -574,9 +574,8 @@ struct AboutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Image(systemName: "rectangle.3.group")
-                    .font(.largeTitle)
-                    .foregroundColor(.accentColor)
+                AppMainIconView()
+                    .frame(width: 48, height: 48)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DevSwitcher2")
@@ -597,7 +596,7 @@ struct AboutView: View {
                     }
                 }) {
                     HStack(spacing: 8) {
-                        Image(systemName: "globe")
+                        Image(systemName: "star.fill")
                             .font(.system(size: 14, weight: .medium))
                         Text(LocalizedStrings.openGitHub)
                             .font(.system(size: 14, weight: .medium))
@@ -616,6 +615,34 @@ struct AboutView: View {
                 }
                 .buttonStyle(.plain)
                 .help(LocalizedStrings.gitHub)
+                
+                // Buy Me a Coffee按钮
+                Button(action: {
+                    // TODO: 替换为您的Buy Me a Coffee链接
+                    if let url = URL(string: "https://rivermao.com/about/") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "cup.and.saucer")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(LocalizedStrings.buyMeCoffee)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .help(LocalizedStrings.supportDevelopment)
             }
             
             Divider()
@@ -648,6 +675,19 @@ struct AboutView: View {
             
             Divider()
             
+            // Support Development Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text(LocalizedStrings.supportDevelopment)
+                    .font(.headline)
+                
+                Text(LocalizedStrings.coffeeDescription)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Divider()
+            
             VStack(alignment: .leading, spacing: 8) {
                 Text(LocalizedStrings.developmentInfo)
                     .font(.headline)
@@ -664,6 +704,37 @@ struct AboutView: View {
             Spacer()
         }
         .padding()
+    }
+}
+
+// MARK: - App Main Icon View
+struct AppMainIconView: View {
+    var body: some View {
+        if let nsImage = loadAppIcon() {
+            Image(nsImage: nsImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } else {
+            // 备用图标
+            Image(systemName: "rectangle.3.group")
+                .font(.largeTitle)
+                .foregroundColor(.accentColor)
+        }
+    }
+    
+    private func loadAppIcon() -> NSImage? {
+        // 方法1: 尝试使用应用程序的图标
+        if let appIcon = NSApp.applicationIconImage {
+            return appIcon
+        }
+        
+        // 方法2: 尝试从bundle中加载.icns文件
+        if let iconPath = Bundle.main.path(forResource: "AppIcon", ofType: "icns"),
+           let nsImage = NSImage(contentsOfFile: iconPath) {
+            return nsImage
+        }
+        
+        return nil
     }
 }
 

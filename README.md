@@ -15,6 +15,12 @@ A modern menu bar application that enhances window and application switching exp
 
 </div>
 
+## 📸 Preview
+
+<img width="1800" height="1169" alt="image" src="https://github.com/user-attachments/assets/bab4d402-a241-4511-8739-61ad97e43a62" />
+
+<img width="1800" height="1169" alt="image" src="https://github.com/user-attachments/assets/8ea736ad-8ce9-4d34-a704-06b05cb9c9cb" />
+
 ## ✨ Key Features
 
 ### 🚀 Enhanced Application Switchers
@@ -41,9 +47,6 @@ A modern menu bar application that enhances window and application switching exp
 - Dynamic language switching
 - Automatic system language detection
 
-## 📸 Preview
-
-> Coming Soon
 
 ## 🚀 Quick Start
 

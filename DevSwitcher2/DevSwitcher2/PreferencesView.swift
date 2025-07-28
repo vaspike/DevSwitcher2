@@ -618,7 +618,6 @@ struct AboutView: View {
                 
                 // Buy Me a Coffee按钮
                 Button(action: {
-                    // TODO: 替换为您的Buy Me a Coffee链接
                     if let url = URL(string: "https://rivermao.com/about/") {
                         NSWorkspace.shared.open(url)
                     }

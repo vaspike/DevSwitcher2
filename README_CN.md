@@ -165,16 +165,3 @@ DevSwitcher2/
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 🙏 致谢
-
-- 感谢 Apple 提供强大的 macOS 开发框架
-- 感谢开源社区的灵感和支持
-- 感谢所有用户的反馈和建议
-
-## 📞 联系方式
-
-- **作者**: River
-- **GitHub**: [@vaspike](https://github.com/vaspike)
-- **问题反馈**: [GitHub Issues](https://github.com/vaspike/DevSwitcher2/issues)
-- **功能建议**: [GitHub Discussions](https://github.com/vaspike/DevSwitcher2/discussions)

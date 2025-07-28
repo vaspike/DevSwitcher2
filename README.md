@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.0.1-blue?style=for-the-badge)
+![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.0-blue?style=for-the-badge)
 [![macOS](https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)

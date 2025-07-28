@@ -65,8 +65,9 @@ A modern menu bar application that enhances window and application switching exp
 ```bash
 # Install
 brew tap vaspike/devswitcher2 && brew install --cask DevSwitcher2
-
-# uninstall
+```
+```bash
+# Uninstall
 brew uninstall devswitcher2
 ```
 

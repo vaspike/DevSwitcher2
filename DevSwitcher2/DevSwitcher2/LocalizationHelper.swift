@@ -131,6 +131,12 @@ struct LocalizedStrings {
     static let setupLater = "setup_later".localized
     static let accessibilityPermissionGranted = "accessibility_permission_granted".localized
     
+    // MARK: - Restart Required
+    static let restartRequiredTitle = "restart_required_title".localized
+    static let restartRequiredMessage = "restart_required_message".localized
+    static let restartNow = "restart_now".localized
+    static let restartLater = "restart_later".localized
+    
     // MARK: - Error Messages
     static let noWindowsFound = "no_windows_found".localized
     static let hotkeyRegistrationFailed = "hotkey_registration_failed".localized

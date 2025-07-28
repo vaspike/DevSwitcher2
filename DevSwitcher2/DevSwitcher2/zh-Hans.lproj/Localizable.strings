@@ -36,10 +36,16 @@
 "accessibility_permission_required" = "DevSwitcher2 需要辅助功能权限才能正常工作。";
 "open_system_preferences" = "打开系统偏好设置";
 "accessibility_permission_title" = "需要辅助功能权限";
-"accessibility_permission_message" = "DevSwitcher2 需要辅助功能权限来获取和切换应用窗口。请在系统偏好设置 > 安全性与隐私 > 辅助功能 中启用 DevSwitcher2。";
+"accessibility_permission_message" = "DevSwitcher2 需要辅助功能权限来获取和切换应用程序窗口。请在系统偏好设置 > 安全性与隐私 > 辅助功能中启用 DevSwitcher2。";
 "open_system_preferences_button" = "打开系统偏好设置";
 "setup_later" = "稍后设置";
 "accessibility_permission_granted" = "辅助功能权限已授予";
+
+// MARK: - 需要重启
+"restart_required_title" = "需要重启应用";
+"restart_required_message" = "辅助功能权限已授予！请重启 DevSwitcher2 以使更改生效。";
+"restart_now" = "立即重启";
+"restart_later" = "稍后重启";
 
 // MARK: - 错误信息
 "no_windows_found" = "未找到当前应用的窗口";
@@ -125,7 +131,7 @@
 
 // MARK: - 关于页面
 "about_app" = "关于 DevSwitcher2";
-"version" = "版本 2.0.2";
+"version" = "版本 2.1.1";
 "app_description" = "DevSwitcher2 是一款现代化的 macOS 生产力工具，通过双模式切换功能增强您的窗口和应用切换体验。";
 "main_features" = "主要功能:";
 "feature_1" = "• DS2 模式：增强的同应用窗口切换";

@@ -151,12 +151,75 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     Logger.log(LocalizedStrings.accessibilityPermissionGranted)
                     timer.invalidate()
                     self?.accessibilityCheckTimer = nil
+                    
+                    // Show restart required dialog
+                    DispatchQueue.main.async {
+                        self?.showRestartRequiredDialog()
+                    }
+                    
                     // Re-register hotkey once permission is granted
                     self?.hotkeyManager?.registerHotkey()
                 }
             }
         } else {
             Logger.log(LocalizedStrings.accessibilityPermissionGranted)
+        }
+    }
+    
+    // MARK: - Restart Required Dialog
+    func showRestartRequiredDialog() {
+        let alert = NSAlert()
+        alert.messageText = LocalizedStrings.restartRequiredTitle
+        alert.informativeText = LocalizedStrings.restartRequiredMessage
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: LocalizedStrings.restartNow)
+        alert.addButton(withTitle: LocalizedStrings.restartLater)
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // User chose to restart now
+            restartApplication()
+        }
+    }
+    
+    // MARK: - Application Restart
+    func restartApplication() {
+        Logger.log("🔄 Restarting application...")
+        
+        // Get the path to the current application
+        let appPath = Bundle.main.bundlePath
+        
+        // Use shell script to restart the application
+        let restartScript = """
+        #!/bin/bash
+        sleep 1
+        open "\(appPath)"
+        """
+        
+        // Write the script to a temporary file
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("restart_devswitcher2.sh")
+        
+        do {
+            try restartScript.write(to: tempURL, atomically: true, encoding: .utf8)
+            
+            // Make the script executable
+            let process = Process()
+            process.launchPath = "/bin/chmod"
+            process.arguments = ["+x", tempURL.path]
+            process.launch()
+            process.waitUntilExit()
+            
+            // Execute the restart script
+            let restartProcess = Process()
+            restartProcess.launchPath = "/bin/bash"
+            restartProcess.arguments = [tempURL.path]
+            restartProcess.launch()
+            
+            // Quit the current application
+            NSApplication.shared.terminate(nil)
+            
+        } catch {
+            Logger.log("❌ Failed to restart application: \(error)")
         }
     }
     

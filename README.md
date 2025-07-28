@@ -17,9 +17,13 @@ A modern menu bar application that enhances window and application switching exp
 
 ## 📸 Preview
 
-<img width="1800" height="1169" alt="image" src="https://github.com/user-attachments/assets/bab4d402-a241-4511-8739-61ad97e43a62" />
+![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
 
-<img width="1800" height="1169" alt="image" src="https://github.com/user-attachments/assets/8ea736ad-8ce9-4d34-a704-06b05cb9c9cb" />
+![1448X1002/1.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/2ifI/1448X1002/1.png)
+
+![2002X1436/4.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/z493/2002X1436/4.png)
+
+![3.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/Mamo/3574X2316/3.png/webp)
 
 ## ✨ Key Features
 

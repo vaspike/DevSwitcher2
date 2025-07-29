@@ -61,13 +61,24 @@
 
 ### 安装方式
 
-#### 方法 1: 下载发布版本
+#### 方法 1: HomeBrew安装
+
+```bash
+# Install
+brew tap vaspike/devswitcher2 && brew install --cask DevSwitcher2
+```
+```bash
+# Uninstall
+brew uninstall devswitcher2
+```
+
+#### 方法 2: 下载发布版本
 1. 访问 [Releases 页面](https://github.com/vaspike/DevSwitcher2/releases)
 2. 下载最新的 `DevSwitcher2.dmg`
 3. 打开 dmg 文件，将应用拖拽到应用程序文件夹
 4. 启动应用并授予必要权限
 
-#### 方法 2: 从源码构建
+#### 方法 3: 从源码构建
 ```bash
 # 克隆仓库
 git clone https://github.com/vaspike/DevSwitcher2.git

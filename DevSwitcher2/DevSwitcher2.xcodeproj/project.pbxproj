@@ -251,7 +251,7 @@
 				CODE_SIGN_ENTITLEMENTS = DevSwitcher2/DevSwitcher2.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DevSwitcher2/Preview Content\"";
 				DEVELOPMENT_TEAM = J2Z7DS5ZPY;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -266,7 +266,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rivermao.DevSwitcher2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -281,7 +281,7 @@
 				CODE_SIGN_ENTITLEMENTS = DevSwitcher2/DevSwitcher2.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"DevSwitcher2/Preview Content\"";
 				DEVELOPMENT_TEAM = J2Z7DS5ZPY;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -296,7 +296,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rivermao.DevSwitcher2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

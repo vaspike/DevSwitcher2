@@ -12,7 +12,6 @@
 A modern menu bar application that enhances window and application switching experience for smoother workflow.
 
 [📥 Download Latest](https://github.com/vaspike/DevSwitcher2/releases) · [🐛 Report Issues](https://github.com/vaspike/DevSwitcher2/issues) · [💡 Feature Requests](https://github.com/vaspike/DevSwitcher2/discussions) · [🇨🇳 中文文档](README_CN.md)
-
 </div>
 
 ## 📸 Preview

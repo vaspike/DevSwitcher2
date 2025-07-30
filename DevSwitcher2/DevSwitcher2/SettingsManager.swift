@@ -145,7 +145,6 @@ enum TitleExtractionStrategy: String, CaseIterable, Codable {
     case beforeFirstSeparator = "beforeFirstSeparator"  // Before first separator
     case afterLastSeparator = "afterLastSeparator"      // After last separator
     case fullTitle = "fullTitle"           // Full title
-    case customSeparator = "customSeparator" // Custom separator
     
     var displayName: String {
         switch self {
@@ -159,8 +158,6 @@ enum TitleExtractionStrategy: String, CaseIterable, Codable {
             return LocalizedStrings.strategyAfterLastSeparator
         case .fullTitle:
             return LocalizedStrings.strategyFullTitle
-        case .customSeparator:
-            return LocalizedStrings.strategyCustomSeparator
         }
     }
 }
@@ -197,6 +194,12 @@ struct AppSettings: Codable {
         modifierKey: .command,
         triggerKey: .grave,
         appTitleConfigs: [
+            "com.jetbrains.intellij": AppTitleConfig(
+                bundleId: "com.jetbrains.intellij",
+                appName: "IntelliJ IDEA",
+                strategy: .beforeFirstSeparator,
+                customSeparator: " – "
+            ),
             "com.apple.dt.Xcode": AppTitleConfig(
                 bundleId: "com.apple.dt.Xcode",
                 appName: "Xcode",
@@ -214,6 +217,12 @@ struct AppSettings: Codable {
                 appName: "Cursor",
                 strategy: .afterLastSeparator,
                 customSeparator: " - "
+            ),
+            "com.apple.Safari": AppTitleConfig(
+                bundleId: "com.apple.Safari",
+                appName: "Safari",
+                strategy: .beforeFirstSeparator,
+                customSeparator: " — "
             )
         ],
         defaultTitleStrategy: .beforeFirstSeparator,
@@ -300,7 +309,10 @@ class SettingsManager: ObservableObject {
     
     // MARK: - App Title Configuration
     func getAppTitleConfig(for bundleId: String) -> AppTitleConfig? {
-        return settings.appTitleConfigs[bundleId]
+        Logger.log("获取自定义config: \(bundleId)")
+        let config = settings.appTitleConfigs[bundleId]
+        Logger.log("获取自定义config: \(config)")
+        return config
     }
     
     func setAppTitleConfig(_ config: AppTitleConfig) {
@@ -322,40 +334,51 @@ class SettingsManager: ObservableObject {
     // MARK: - Generic Title Extraction Algorithm
     func extractProjectName(from title: String, bundleId: String, appName: String) -> String {
         // First check if there are app-specific configurations
+        Logger.log("准备截断标题: \(bundleId)")
         if let config = getAppTitleConfig(for: bundleId) {
-            return extractProjectName(from: title, using: config.strategy, customSeparator: config.customSeparator)
+            Logger.log("使用自定义config: \(config)")
+            return extractProjectNamePrivate(from: title, using: config.strategy, customSeparator: config.customSeparator)
         }
         
         // Use default strategy
-        return extractProjectName(from: title, using: settings.defaultTitleStrategy, customSeparator: settings.defaultCustomSeparator)
+        return extractProjectNamePrivate(from: title, using: settings.defaultTitleStrategy, customSeparator: settings.defaultCustomSeparator)
     }
     
-    private func extractProjectName(from title: String, using strategy: TitleExtractionStrategy, customSeparator: String?) -> String {
+    // Public method for preview functionality
+    func extractProjectName(from title: String, using strategy: TitleExtractionStrategy, customSeparator: String?) -> String {
+        return extractProjectNamePrivate(from: title, using: strategy, customSeparator: customSeparator)
+    }
+    
+    private func extractProjectNamePrivate(from title: String, using strategy: TitleExtractionStrategy, customSeparator: String?) -> String {
         guard !title.isEmpty else { return title }
         
         switch strategy {
         case .firstPart:
-            return extractFirstPart(from: title)
+            return extractFirstPart(from: title, customSeparator: customSeparator)
             
         case .lastPart:
-            return extractLastPart(from: title)
+            return extractLastPart(from: title, customSeparator: customSeparator)
             
         case .beforeFirstSeparator:
-            return extractBeforeFirstSeparator(from: title)
+            return extractBeforeFirstSeparator(from: title, customSeparator: customSeparator)
             
         case .afterLastSeparator:
-            return extractAfterLastSeparator(from: title)
+            return extractAfterLastSeparator(from: title, customSeparator: customSeparator)
             
         case .fullTitle:
             return title
-            
-        case .customSeparator:
-            guard let separator = customSeparator else { return title }
-            return extractUsingCustomSeparator(from: title, separator: separator)
         }
     }
     
-    private func extractFirstPart(from title: String) -> String {
+    private func extractFirstPart(from title: String, customSeparator: String?) -> String {
+        // 如果指定了自定义分隔符，优先使用
+        if let customSeparator = customSeparator, !customSeparator.isEmpty {
+            if let range = title.range(of: customSeparator) {
+                return String(title[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        // 否则使用默认分隔符列表
         let commonSeparators = [" - ", " — ", " | ", " / ", " \\ "]
         
         for separator in commonSeparators {
@@ -367,7 +390,15 @@ class SettingsManager: ObservableObject {
         return title
     }
     
-    private func extractLastPart(from title: String) -> String {
+    private func extractLastPart(from title: String, customSeparator: String?) -> String {
+        // 如果指定了自定义分隔符，优先使用
+        if let customSeparator = customSeparator, !customSeparator.isEmpty {
+            if let range = title.range(of: customSeparator, options: .backwards) {
+                return String(title[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        // 否则使用默认分隔符列表
         let commonSeparators = [" - ", " — ", " | ", " / ", " \\ "]
         
         for separator in commonSeparators {
@@ -379,7 +410,15 @@ class SettingsManager: ObservableObject {
         return title
     }
     
-    private func extractBeforeFirstSeparator(from title: String) -> String {
+    private func extractBeforeFirstSeparator(from title: String, customSeparator: String?) -> String {
+        // 如果指定了自定义分隔符，优先使用
+        if let customSeparator = customSeparator, !customSeparator.isEmpty {
+            if let range = title.range(of: customSeparator) {
+                return String(title[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        // 否则使用默认分隔符列表
         let commonSeparators = [" — ", " - ", " | ", " / ", " \\ "]
         
         for separator in commonSeparators {
@@ -391,21 +430,21 @@ class SettingsManager: ObservableObject {
         return title
     }
     
-    private func extractAfterLastSeparator(from title: String) -> String {
+    private func extractAfterLastSeparator(from title: String, customSeparator: String?) -> String {
+        // 如果指定了自定义分隔符，优先使用
+        if let customSeparator = customSeparator, !customSeparator.isEmpty {
+            if let range = title.range(of: customSeparator, options: .backwards) {
+                return String(title[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        // 否则使用默认分隔符列表
         let commonSeparators = [" — ", " - ", " | ", " / ", " \\ "]
         
         for separator in commonSeparators {
             if let range = title.range(of: separator, options: .backwards) {
                 return String(title[range.upperBound...]).trimmingCharacters(in: .whitespaces)
             }
-        }
-        
-        return title
-    }
-    
-    private func extractUsingCustomSeparator(from title: String, separator: String) -> String {
-        if let range = title.range(of: separator, options: .backwards) {
-            return String(title[range.upperBound...]).trimmingCharacters(in: .whitespaces)
         }
         
         return title

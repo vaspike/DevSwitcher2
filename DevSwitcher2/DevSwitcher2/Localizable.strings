@@ -12,6 +12,10 @@
 "language_english" = "English";
 "language_chinese" = "简体中文";
 "language_restart_hint" = "Changes take effect after restarting the application";
+"language_section_title" = "Language Settings";
+"language_selection_label" = "Interface Language";
+"language_restart_note" = "Changes take effect after restarting the application";
+"language_restart_now_button" = "Restart Now";
 
 // MARK: - DS2 Window Switcher Interface
 "window_switcher_title" = "Select Window";
@@ -71,16 +75,32 @@
 "reset" = "Reset";
 "configuration" = "Configuration";
 "current_hotkey" = "Current Hotkey";
+"settings_tab" = "Settings";
+"about_tab" = "About";
+"preferences_subtitle" = "Configuration & Settings";
+"settings_tab_title" = "Settings";
+"about_tab_title" = "About";
 
 // MARK: - DS2 Settings
 "ds2_same_app_window_switching" = "Multi-window switcher within the same app";
 "current_ds2_hotkey" = "Current Hotkey";
+"ds2_hotkey_section_title" = "Window Switching Hotkey";
+"ds2_hotkey_description" = "Same-app multi-window switching";
+"hotkey_apply" = "Apply";
+"hotkey_reset" = "Reset";
+"modifier_key_label" = "Modifier Key";
+"trigger_key_label" = "Trigger Key";
+"current_hotkey_display" = "Current Hotkey: %@ + %@";
 
 // MARK: - CT2 Settings
 "ct2_app_switcher" = "Application Switcher";
 "enable_ct2" = "Enable";
 "current_ct2_hotkey" = "Current Hotkey";
 "ct2_function_disabled" = "Application Switcher is disabled";
+"ct2_hotkey_section_title" = "App Switching Hotkey";
+"ct2_hotkey_description" = "Multi-app quick switching";
+"ct2_enable_toggle" = "Enable";
+"ct2_disabled_message" = "Application Switcher is disabled";
 
 // MARK: - Modifier Keys
 "modifier_command" = "Command ⌘";
@@ -108,6 +128,16 @@
 "no_app_configs" = "No app-specific configurations";
 "strategy" = "Strategy";
 "delete" = "Delete";
+"window_title_section_title" = "Window Title Configuration";
+"default_strategy_description" = "Default Extraction Strategy";
+"app_configs_description" = "App-Specific Configuration";
+"import_config_button" = "Import";
+"export_config_button" = "Export";
+"add_app_button" = "Add App";
+"no_configs_placeholder" = "No app-specific configurations";
+"extraction_strategy_label" = "Extraction Strategy";
+"custom_separator_label" = "Custom Separator";
+"separator_example" = "e.g.:  - ";
 
 // MARK: - Title Extraction Strategies
 "strategy_first_part" = "First Part";
@@ -115,7 +145,6 @@
 "strategy_before_first_separator" = "Before First Separator";
 "strategy_after_last_separator" = "After Last Separator";
 "strategy_full_title" = "Full Title";
-"strategy_custom_separator" = "Custom Separator";
 
 // MARK: - Add App Configuration Dialog
 "add_app_config" = "Add Application Configuration";
@@ -128,6 +157,76 @@
 "bundle_id_placeholder" = "e.g.: com.apple.dt.Xcode";
 "app_name_placeholder" = "e.g.: Xcode";
 "custom_separator_placeholder" = "e.g.:  - ";
+
+// MARK: - Separator Placeholders for Different Strategies
+"separator_placeholder_first_last_part" = "e.g.: \" - \" or \" | \"";
+"separator_placeholder_before_first" = "e.g.: \" — \" or \" - \"";
+"separator_placeholder_after_last" = "e.g.: \" - \" or \" — \"";
+
+// MARK: - Separator Help Text for Different Strategies
+"separator_help_first_part" = "Specify the separator to split the title and take the first part";
+"separator_help_last_part" = "Specify the separator to split the title and take the last part";
+"separator_help_before_first" = "Specify the separator and take content before the first separator";
+"separator_help_after_last" = "Specify the separator and take content after the last separator";
+
+// MARK: - Preview Functionality
+"preview" = "Preview Results";
+"preview_window_titles" = "Window Titles";
+"select_window_title" = "Select a window title";
+"no_windows_found" = "No windows found for this app";
+"app_not_running" = "Application not currently running";
+"extraction_result" = "Extraction Result";
+"copy_title" = "Click to copy title";
+"selected_title" = "Selected Title";
+"current_strategy" = "Strategy";
+"current_separator" = "Separator";
+"loading" = "Loading...";
+
+// MARK: - App Selection UI
+"select_from_installed_apps" = "Select from installed applications";
+"select_application_placeholder" = "Choose an application...";
+"search_applications" = "Search applications";
+"no_applications_found" = "No applications found";
+"no_search_results" = "No search results";
+"more_than_50_results" = "Showing first 50 results. Please refine your search.";
+"loading_apps_hint" = "Scanning installed applications...";
+
+// MARK: - Add App Config Dialog Section Titles
+"app_selection_section" = "App Selection";
+"basic_info_section" = "Basic Information";
+"extraction_strategy_section" = "Extraction Strategy";
+"preview_results_section" = "Preview Results";
+
+// MARK: - Configuration Export/Import
+"export_config" = "Export";
+"import_config" = "Import";
+"export_configuration" = "Export Configuration";
+"import_configuration" = "Import Configuration";
+"choose_export_location" = "Choose where to save the configuration file";
+"choose_import_file" = "Choose a configuration file to import";
+"file_name" = "File Name:";
+"export_success" = "Export Successful";
+"export_failed" = "Export Failed";
+"import_success" = "Import Successful";
+"import_failed" = "Import Failed";
+"import_no_data" = "No Data to Import";
+"import_partial_success" = "Partial Import Success";
+"export_encoding_error" = "Failed to encode configuration data";
+"import_decoding_error" = "Failed to decode configuration file";
+"file_read_error" = "Failed to read configuration file";
+"invalid_file_format" = "Invalid configuration file format";
+"operation_cancelled" = "Operation cancelled by user";
+"import_no_data_message" = "The selected file contains no valid configuration data";
+"export_success_message" = "Configuration successfully exported to file '%@'";
+"import_success_message" = "Successfully imported %d new configurations and updated %d existing ones";
+"import_partial_success_message" = "Imported %d configurations with some errors";
+"delete_config_tooltip" = "Delete Configuration";
+"separator_label" = "Separator: \"%@\"";
+"default_strategy_apply" = "Apply";
+"app_config_import" = "Import";
+"app_config_export" = "Export";
+"app_config_add" = "Add App";
+"no_app_configs_message" = "No app-specific configurations";
 
 // MARK: - About Page
 "about_app" = "About DevSwitcher2";
@@ -144,6 +243,8 @@
 "author" = "Author: River";
 "github" = "GitHub Repository";
 "open_github" = "GitHub";
+"website" = "Official Website";
+"open_website" = "Visit Website";
 "buy_me_coffee" = "Buy Me a Coffee";
 "support_development" = "Support Development";
 "coffee_description" = "If you find DevSwitcher2 helpful, consider buying me a coffee to support continued development!";

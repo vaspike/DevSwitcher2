@@ -96,6 +96,10 @@ struct LocalizedStrings {
     static let languageEnglish = "language_english".localized
     static let languageChinese = "language_chinese".localized
     static let languageRestartHint = "language_restart_hint".localized
+    static let languageSectionTitle = "language_section_title".localized
+    static let languageSelectionLabel = "language_selection_label".localized
+    static let languageRestartNote = "language_restart_note".localized
+    static let languageRestartNowButton = "language_restart_now_button".localized
     
     // MARK: - DS2 Window Switcher Interface
     static let windowSwitcherTitle = "window_switcher_title".localized
@@ -153,6 +157,9 @@ struct LocalizedStrings {
     static let preferencesTitle = "preferences_title".localized
     static let coreSettings = "core_settings".localized
     static let about = "about".localized
+    static let preferencesSubtitle = "preferences_subtitle".localized
+    static let settingsTabTitle = "settings_tab_title".localized
+    static let aboutTabTitle = "about_tab_title".localized
     static let hotkeySettings = "hotkey_settings".localized
     static let windowTitleConfig = "window_title_config".localized
     static let modifierKey = "modifier_key".localized
@@ -165,12 +172,18 @@ struct LocalizedStrings {
     // MARK: - DS2 Settings
     static let ds2SameAppWindowSwitching = "ds2_same_app_window_switching".localized
     static let currentDS2Hotkey = "current_ds2_hotkey".localized
+    static let modifierKeyLabel = "modifier_key_label".localized
+    static let triggerKeyLabel = "trigger_key_label".localized
+    static func currentHotkeyDisplay(_ modifier: String, _ trigger: String) -> String {
+        return "current_hotkey_display".localized(with: modifier, trigger)
+    }
     
     // MARK: - CT2 Settings
     static let ct2AppSwitcher = "ct2_app_switcher".localized
     static let enableCT2 = "enable_ct2".localized
     static let currentCT2Hotkey = "current_ct2_hotkey".localized
     static let ct2FunctionDisabled = "ct2_function_disabled".localized
+    static let ct2DisabledMessage = "ct2_disabled_message".localized
     
     // MARK: - Modifier Keys
     static let modifierCommand = "modifier_command".localized
@@ -205,7 +218,6 @@ struct LocalizedStrings {
     static let strategyBeforeFirstSeparator = "strategy_before_first_separator".localized
     static let strategyAfterLastSeparator = "strategy_after_last_separator".localized
     static let strategyFullTitle = "strategy_full_title".localized
-    static let strategyCustomSeparator = "strategy_custom_separator".localized
     
     // MARK: - Add App Configuration Dialog
     static let addAppConfig = "add_app_config".localized
@@ -218,6 +230,102 @@ struct LocalizedStrings {
     static let bundleIdPlaceholder = "bundle_id_placeholder".localized
     static let appNamePlaceholder = "app_name_placeholder".localized
     static let customSeparatorPlaceholder = "custom_separator_placeholder".localized
+    
+    // MARK: - Separator Placeholders for Different Strategies
+    static let separatorPlaceholderFirstLastPart = "separator_placeholder_first_last_part".localized
+    static let separatorPlaceholderBeforeFirst = "separator_placeholder_before_first".localized
+    static let separatorPlaceholderAfterLast = "separator_placeholder_after_last".localized
+    
+    // MARK: - Separator Help Text for Different Strategies
+    static let separatorHelpFirstPart = "separator_help_first_part".localized
+    static let separatorHelpLastPart = "separator_help_last_part".localized
+    static let separatorHelpBeforeFirst = "separator_help_before_first".localized
+    static let separatorHelpAfterLast = "separator_help_after_last".localized
+    
+    // MARK: - Preview Functionality
+    static let preview = "preview".localized
+    static let previewWindowTitles = "preview_window_titles".localized
+    static let selectWindowTitle = "select_window_title".localized
+    static let appNotRunning = "app_not_running".localized
+    static let extractionResult = "extraction_result".localized
+    static let copyTitle = "copy_title".localized
+    static let selectedTitle = "selected_title".localized
+    static let currentStrategy = "current_strategy".localized
+    static let currentSeparator = "current_separator".localized
+    static let loading = "loading".localized
+    
+    // MARK: - App Selection UI
+    static let selectFromInstalledApps = "select_from_installed_apps".localized
+    static let selectApplicationPlaceholder = "select_application_placeholder".localized
+    static let searchApplications = "search_applications".localized
+    static let noApplicationsFound = "no_applications_found".localized
+    static let noSearchResults = "no_search_results".localized
+    static let moreThan50Results = "more_than_50_results".localized
+    static let loadingAppsHint = "loading_apps_hint".localized
+    
+    // MARK: - Add App Config Dialog Section Titles
+    static let appSelectionSection = "app_selection_section".localized
+    static let basicInfoSection = "basic_info_section".localized
+    static let extractionStrategySection = "extraction_strategy_section".localized
+    static let previewResultsSection = "preview_results_section".localized
+    
+    // MARK: - Configuration Export/Import
+    static let exportConfig = "export_config".localized
+    static let importConfig = "import_config".localized
+    static let exportConfiguration = "export_configuration".localized
+    static let importConfiguration = "import_configuration".localized
+    static let chooseExportLocation = "choose_export_location".localized
+    static let chooseImportFile = "choose_import_file".localized
+    static let fileName = "file_name".localized
+    static let exportSuccess = "export_success".localized
+    static let exportFailed = "export_failed".localized
+    static let importSuccess = "import_success".localized
+    static let importFailed = "import_failed".localized
+    static let importNoData = "import_no_data".localized
+    static let importPartialSuccess = "import_partial_success".localized
+    static let exportEncodingError = "export_encoding_error".localized
+    static let importDecodingError = "import_decoding_error".localized
+    static let fileReadError = "file_read_error".localized
+    static let invalidFileFormat = "invalid_file_format".localized
+    static let operationCancelled = "operation_cancelled".localized
+    static let importNoDataMessage = "import_no_data_message".localized
+    
+    // 带参数的消息
+    static func exportSuccessMessage(_ fileName: String) -> String {
+        return "export_success_message".localized(with: fileName)
+    }
+    
+    static func importSuccessMessage(_ newConfigs: Int, _ updatedConfigs: Int) -> String {
+        return "import_success_message".localized(with: newConfigs, updatedConfigs)
+    }
+    
+    static func importPartialSuccessMessage(_ totalImported: Int) -> String {
+        return "import_partial_success_message".localized(with: totalImported)
+    }
+    
+    // MARK: - Additional UI Labels
+    static func separatorLabel(_ separator: String) -> String {
+        return "separator_label".localized(with: separator)
+    }
+    static let defaultStrategyApply = "default_strategy_apply".localized
+    static let appConfigImport = "app_config_import".localized
+    static let appConfigExport = "app_config_export".localized
+    static let appConfigAdd = "app_config_add".localized
+    static let noAppConfigsMessage = "no_app_configs_message".localized
+    static let windowTitleSectionTitle = "window_title_section_title".localized
+    static let defaultStrategyDescription = "default_strategy_description".localized
+    static let appConfigsDescription = "app_configs_description".localized
+    static let extractionStrategyLabel = "extraction_strategy_label".localized
+    static let customSeparatorLabel = "custom_separator_label".localized
+    static let separatorExample = "separator_example".localized
+    static let deleteConfigTooltip = "delete_config_tooltip".localized
+    static let ds2HotkeySectionTitle = "ds2_hotkey_section_title".localized
+    static let ds2HotkeyDescription = "ds2_hotkey_description".localized
+    static let ct2HotkeySectionTitle = "ct2_hotkey_section_title".localized
+    static let ct2EnableToggle = "ct2_enable_toggle".localized
+    static let ct2HotkeyDescription = "ct2_hotkey_description".localized
+    static let hotkeyApply = "hotkey_apply".localized
+    static let hotkeyReset = "hotkey_reset".localized
     
     // MARK: - About Page
     static let aboutApp = "about_app".localized
@@ -234,6 +342,8 @@ struct LocalizedStrings {
     static let author = "author".localized
     static let gitHub = "github".localized
     static let openGitHub = "open_github".localized
+    static let website = "website".localized
+    static let openWebsite = "open_website".localized
     static let buyMeCoffee = "buy_me_coffee".localized
     static let supportDevelopment = "support_development".localized
     static let coffeeDescription = "coffee_description".localized

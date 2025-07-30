@@ -11,7 +11,11 @@
 "language_system" = "跟随系统";
 "language_english" = "English";
 "language_chinese" = "简体中文";
-"language_restart_hint" = "更改后重启应用后生效";
+"language_restart_hint" = "更改语言后需要重启应用生效";
+"language_section_title" = "语言设置";
+"language_selection_label" = "界面语言";
+"language_restart_note" = "更改语言后需要重启应用生效";
+"language_restart_now_button" = "立即重启";
 
 // MARK: - DS2窗口切换器界面
 "window_switcher_title" = "选择窗口";
@@ -71,16 +75,32 @@
 "reset" = "重置";
 "configuration" = "配置";
 "current_hotkey" = "当前快捷键";
+"settings_tab" = "设置";
+"about_tab" = "关于";
+"preferences_subtitle" = "配置与设置";
+"settings_tab_title" = "设置";
+"about_tab_title" = "关于";
 
 // MARK: - DS2设置
 "ds2_same_app_window_switching" = "应用内多窗口切换器";
 "current_ds2_hotkey" = "当前快捷键";
+"ds2_hotkey_section_title" = "窗口切换快捷键";
+"ds2_hotkey_description" = "同应用多窗口切换";
+"hotkey_apply" = "应用";
+"hotkey_reset" = "重置";
+"modifier_key_label" = "修饰键";
+"trigger_key_label" = "触发键";
+"current_hotkey_display" = "当前快捷键: %@ + %@";
 
 // MARK: - CT2设置
 "ct2_app_switcher" = "多应用切换器";
 "enable_ct2" = "启用";
 "current_ct2_hotkey" = "当前快捷键";
-"ct2_function_disabled" = "多应用切换器功能未启用";
+"ct2_function_disabled" = "应用切换功能已禁用";
+"ct2_hotkey_section_title" = "应用切换快捷键";
+"ct2_hotkey_description" = "多应用间快速切换";
+"ct2_enable_toggle" = "启用";
+"ct2_disabled_message" = "应用切换功能已禁用";
 
 // MARK: - 修饰键
 "modifier_command" = "Command ⌘";
@@ -108,6 +128,16 @@
 "no_app_configs" = "暂无应用特定配置";
 "strategy" = "策略";
 "delete" = "删除";
+"window_title_section_title" = "窗口标题配置";
+"default_strategy_description" = "默认提取策略";
+"app_configs_description" = "应用特定配置";
+"import_config_button" = "导入";
+"export_config_button" = "导出";
+"add_app_button" = "添加应用";
+"no_configs_placeholder" = "暂无应用特定配置";
+"extraction_strategy_label" = "提取策略";
+"custom_separator_label" = "自定义分隔符";
+"separator_example" = "例如:  - ";
 
 // MARK: - 标题提取策略
 "strategy_first_part" = "第一部分";
@@ -115,7 +145,6 @@
 "strategy_before_first_separator" = "第一个分隔符之前";
 "strategy_after_last_separator" = "最后一个分隔符之后";
 "strategy_full_title" = "完整标题";
-"strategy_custom_separator" = "自定义分隔符";
 
 // MARK: - 添加应用配置对话框
 "add_app_config" = "添加应用配置";
@@ -128,6 +157,76 @@
 "bundle_id_placeholder" = "例如: com.apple.dt.Xcode";
 "app_name_placeholder" = "例如: Xcode";
 "custom_separator_placeholder" = "例如:  - ";
+
+// MARK: - 不同策略的分隔符占位符
+"separator_placeholder_first_last_part" = "例如: \" - \" 或 \" | \"";
+"separator_placeholder_before_first" = "例如: \" — \" 或 \" - \"";
+"separator_placeholder_after_last" = "例如: \" - \" 或 \" — \"";
+
+// MARK: - 不同策略的分隔符帮助文本
+"separator_help_first_part" = "指定用于分割标题的分隔符，取第一部分";
+"separator_help_last_part" = "指定用于分割标题的分隔符，取最后一部分";
+"separator_help_before_first" = "指定分隔符，取第一个分隔符之前的内容";
+"separator_help_after_last" = "指定分隔符，取最后一个分隔符之后的内容";
+
+// MARK: - 预览功能
+"preview" = "预览结果";
+"preview_window_titles" = "窗口标题";
+"select_window_title" = "选择窗口标题";
+"no_windows_found" = "未找到该应用的窗口";
+"app_not_running" = "应用程序当前未运行";
+"extraction_result" = "提取结果";
+"copy_title" = "点击复制标题";
+"selected_title" = "选中的标题";
+"current_strategy" = "策略";
+"current_separator" = "分隔符";
+"loading" = "加载中...";
+
+// MARK: - 应用选择界面
+"select_from_installed_apps" = "从已安装的应用中选择";
+"select_application_placeholder" = "选择应用程序...";
+"search_applications" = "搜索应用程序";
+"no_applications_found" = "未找到应用程序";
+"no_search_results" = "无搜索结果";
+"more_than_50_results" = "显示前50个结果，请细化搜索条件。";
+"loading_apps_hint" = "正在扫描已安装的应用程序...";
+
+// MARK: - 添加应用配置界面分区标题
+"app_selection_section" = "应用选择";
+"basic_info_section" = "基本信息";
+"extraction_strategy_section" = "提取策略";
+"preview_results_section" = "预览结果";
+
+// MARK: - 配置导出/导入
+"export_config" = "导出";
+"import_config" = "导入";
+"export_configuration" = "导出配置";
+"import_configuration" = "导入配置";
+"choose_export_location" = "选择配置文件保存位置";
+"choose_import_file" = "选择要导入的配置文件";
+"file_name" = "文件名：";
+"export_success" = "导出成功";
+"export_failed" = "导出失败";
+"import_success" = "导入成功";
+"import_failed" = "导入失败";
+"import_no_data" = "无数据可导入";
+"import_partial_success" = "部分导入成功";
+"export_encoding_error" = "配置数据编码失败";
+"import_decoding_error" = "配置文件解码失败";
+"file_read_error" = "配置文件读取失败";
+"invalid_file_format" = "无效的配置文件格式";
+"operation_cancelled" = "用户取消操作";
+"import_no_data_message" = "所选文件不包含有效的配置数据";
+"export_success_message" = "配置已成功导出到文件 '%@'";
+"import_success_message" = "成功导入 %d 个新配置，更新了 %d 个现有配置";
+"import_partial_success_message" = "已导入 %d 个配置，但出现了一些错误";
+"delete_config_tooltip" = "删除配置";
+"separator_label" = "分隔符: \"%@\"";
+"default_strategy_apply" = "应用";
+"app_config_import" = "导入";
+"app_config_export" = "导出";
+"app_config_add" = "添加应用";
+"no_app_configs_message" = "暂无应用特定配置";
 
 // MARK: - 关于页面
 "about_app" = "关于 DevSwitcher2";
@@ -144,6 +243,8 @@
 "author" = "作者：River";
 "github" = "GitHub 仓库";
 "open_github" = "GitHub";
+"website" = "官方网站";
+"open_website" = "访问官网";
 "buy_me_coffee" = "请我喝咖啡";
 "support_development" = "支持开发";
 "coffee_description" = "如果您觉得 DevSwitcher2 很有用，请考虑请我喝杯咖啡来支持持续开发！";

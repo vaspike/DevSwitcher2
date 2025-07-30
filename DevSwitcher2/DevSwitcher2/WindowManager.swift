@@ -1550,4 +1550,215 @@ class WindowManager: ObservableObject {
             Logger.log("🐕 Watchdog running normally, detected \(watchdogCallCount) times, \(modifierName) key status: pressed")
         }
     }
+    
+    // MARK: - Preview Support Methods
+    
+    /// 根据指定的 bundle ID 获取对应应用的所有窗口标题
+    /// - Parameter bundleId: 应用的 bundle ID
+    /// - Returns: 窗口标题数组
+    func getWindowTitlesForBundleId(_ bundleId: String) -> [String] {
+        Logger.log("🔍 Getting window titles for bundle ID: \(bundleId)")
+        
+        var windowTitles: [String] = []
+        
+        // 获取所有运行的应用
+        let allApps = NSWorkspace.shared.runningApplications
+        
+        // 找到匹配 bundle ID 的应用
+        guard let targetApp = allApps.first(where: { $0.bundleIdentifier == bundleId }) else {
+            Logger.log("❌ No running application found with bundle ID: \(bundleId)")
+            return []
+        }
+        
+        Logger.log("✅ Found application: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
+        
+        // 获取所有窗口信息
+        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        
+        // 过滤出目标应用的窗口
+        for windowInfo in windowList {
+            guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
+                  processID == targetApp.processIdentifier,
+                  let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool,
+                  let layer = windowInfo[kCGWindowLayer as String] as? Int,
+                  let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID,
+                  let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
+                  let width = bounds["Width"] as? CGFloat,
+                  let height = bounds["Height"] as? CGFloat else { continue }
+            
+            // 过滤条件：在屏幕上、层级为0（正常窗口）、有合理的尺寸
+            let hasValidID = windowID > 0
+            let hasValidLayer = layer == 0
+            let hasReasonableSize = width > 100 && height > 100
+            
+            if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                // 尝试通过 Core Graphics API 获取窗口标题
+                let cgTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+                
+                // 尝试通过 AX API 获取更准确的窗口标题
+                let axTitle = getAXWindowTitleForSpecificWindow(windowID: windowID, processID: processID)
+                
+                // 选择最佳标题
+                let finalTitle: String
+                if !axTitle.isEmpty {
+                    finalTitle = axTitle
+                } else if !cgTitle.isEmpty {
+                    finalTitle = cgTitle
+                } else {
+                    finalTitle = "\(targetApp.localizedName ?? "应用") 窗口"
+                }
+                
+                if !finalTitle.isEmpty && !windowTitles.contains(finalTitle) {
+                    windowTitles.append(finalTitle)
+                    Logger.log("   ✅ Found window: '\(finalTitle)'")
+                }
+            }
+        }
+        
+        Logger.log("📋 Total window titles found: \(windowTitles.count)")
+        return windowTitles
+    }
+    
+    /// 获取特定窗口的 AX 标题
+    private func getAXWindowTitleForSpecificWindow(windowID: CGWindowID, processID: pid_t) -> String {
+        let app = AXUIElementCreateApplication(processID)
+        
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+              let axWindows = windowsRef as? [AXUIElement] else {
+            return ""
+        }
+        
+        // 遍历所有 AX 窗口，尝试找到匹配的窗口
+        for axWindow in axWindows {
+            var titleRef: CFTypeRef?
+            if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
+               let title = titleRef as? String, !title.isEmpty {
+                return title
+            }
+        }
+        
+        return ""
+    }
+    
+    /// 专用于预览功能：获取指定 bundle ID 应用的所有窗口标题
+    /// - Parameter bundleId: 应用的 bundle ID
+    /// - Returns: 所有窗口标题数组
+    func getWindowTitlesForPreview(_ bundleId: String) -> [String] {
+        Logger.log("🔍 [Preview] Getting all window titles for bundle ID: \(bundleId)")
+        
+        var windowTitles: [String] = []
+        
+        // 获取所有运行的应用
+        let allApps = NSWorkspace.shared.runningApplications
+        
+        // 找到匹配 bundle ID 的应用
+        guard let targetApp = allApps.first(where: { $0.bundleIdentifier == bundleId }) else {
+            Logger.log("❌ [Preview] No running application found with bundle ID: \(bundleId)")
+            return []
+        }
+        
+        Logger.log("✅ [Preview] Found application: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
+        
+        // 方法1：使用 AX API 获取所有窗口标题
+        let axTitles = getAllAXWindowTitles(for: targetApp.processIdentifier)
+        Logger.log("🔍 [Preview] AX API found \(axTitles.count) window titles")
+        
+        // 如果AX API获取到了标题，优先使用
+        if !axTitles.isEmpty {
+            windowTitles.append(contentsOf: axTitles)
+        } else {
+            // 方法2：回退到 Core Graphics API
+            Logger.log("⚠️ [Preview] AX API failed, falling back to Core Graphics API")
+            let cgTitles = getAllCGWindowTitles(for: targetApp.processIdentifier, appName: targetApp.localizedName ?? "应用")
+            windowTitles.append(contentsOf: cgTitles)
+        }
+        
+        // 去重并过滤空标题
+        let uniqueTitles = Array(Set(windowTitles)).filter { !$0.isEmpty && $0.trimmingCharacters(in: .whitespaces) != "" }
+        
+        Logger.log("📋 [Preview] Total unique window titles found: \(uniqueTitles.count)")
+        for (index, title) in uniqueTitles.enumerated() {
+            Logger.log("   \(index + 1). '\(title)'")
+        }
+        
+        return uniqueTitles.sorted() // 排序以保持一致性
+    }
+    
+    /// 使用 AX API 获取指定进程的所有窗口标题
+    private func getAllAXWindowTitles(for processID: pid_t) -> [String] {
+        let app = AXUIElementCreateApplication(processID)
+        var windowTitles: [String] = []
+        
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+              let axWindows = windowsRef as? [AXUIElement] else {
+            Logger.log("❌ [Preview] Cannot get AX window list for PID: \(processID)")
+            return []
+        }
+        
+        Logger.log("🔍 [Preview] Found \(axWindows.count) AX windows for PID: \(processID)")
+        
+        // 遍历所有 AX 窗口
+        for (index, axWindow) in axWindows.enumerated() {
+            var titleRef: CFTypeRef?
+            if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
+               let title = titleRef as? String, !title.isEmpty {
+                windowTitles.append(title)
+                Logger.log("   ✅ [Preview] AX Window[\(index)]: '\(title)'")
+            } else {
+                Logger.log("   ⚠️ [Preview] AX Window[\(index)]: No title or empty")
+            }
+        }
+        
+        return windowTitles
+    }
+    
+    /// 使用 Core Graphics API 获取指定进程的所有窗口标题
+    private func getAllCGWindowTitles(for processID: pid_t, appName: String) -> [String] {
+        var windowTitles: [String] = []
+        
+        // 获取所有窗口信息
+        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        
+        Logger.log("🔍 [Preview] Checking \(windowList.count) CG windows for PID: \(processID)")
+        
+        var validWindowCount = 0
+        
+        // 过滤出目标应用的窗口
+        for windowInfo in windowList {
+            guard let windowProcessID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
+                  windowProcessID == processID,
+                  let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool,
+                  let layer = windowInfo[kCGWindowLayer as String] as? Int,
+                  let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID,
+                  let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
+                  let width = bounds["Width"] as? CGFloat,
+                  let height = bounds["Height"] as? CGFloat else { continue }
+            
+            // 过滤条件：在屏幕上、层级为0（正常窗口）、有合理的尺寸
+            let hasValidID = windowID > 0
+            let hasValidLayer = layer == 0
+            let hasReasonableSize = width > 100 && height > 100
+            
+            if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                validWindowCount += 1
+                
+                // 尝试获取窗口标题
+                let cgTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+                
+                let finalTitle: String
+                if !cgTitle.isEmpty {
+                    finalTitle = cgTitle
+                } else {
+                    finalTitle = "\(appName) 窗口 \(validWindowCount)"
+                }
+                
+                windowTitles.append(finalTitle)
+                Logger.log("   ✅ [Preview] CG Window[\(validWindowCount)]: '\(finalTitle)'")
+            }
+        }
+        
+        return windowTitles
+    }
 } 

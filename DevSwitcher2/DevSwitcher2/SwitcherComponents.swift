@@ -63,6 +63,7 @@ struct BaseSwitcherView<ItemType>: View {
     let itemContentBuilder: (ItemType, Bool, Bool, Int) -> AnyView
     
     @State private var hoveredIndex: Int? = nil
+    @StateObject private var settingsManager = SettingsManager.shared
     
     var body: some View {
         VStack(spacing: 0) {
@@ -74,6 +75,7 @@ struct BaseSwitcherView<ItemType>: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
         .frame(maxWidth: 600, maxHeight: 400)
+        .environmentObject(settingsManager)
     }
     
     // MARK: - Header View
@@ -169,6 +171,11 @@ struct WindowItemContentView: View {
     let isSelected: Bool
     let isHovered: Bool
     let itemIndex: Int
+    @EnvironmentObject private var settingsManager: SettingsManager
+    
+    private var showNumberKeys: Bool {
+        settingsManager.settings.showNumberKeys
+    }
     
     var body: some View {
         HStack(spacing: 16) {
@@ -203,33 +210,29 @@ struct WindowItemContentView: View {
             
             // Fixed width container for right indicators
             HStack(spacing: 8) {
-                // Number key indicator (always reserve space)
+                // Number key indicator (conditionally display based on settings)
                 Group {
-                    if itemIndex < 9 {
+                    if showNumberKeys && itemIndex < 9 {
                         Text("\(itemIndex + 1)")
                             .font(.system(.caption, design: .rounded))
                             .fontWeight(.semibold)
                             .foregroundColor(.secondary)
-                    } else {
-                        Text("")
+                            .frame(width: 22, height: 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(.regularMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(.quaternary, lineWidth: 0.5)
+                                    )
+                                    .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                            )
+                    } else if showNumberKeys {
+                        // 保持空间占位以维持布局一致性
+                        Color.clear
+                            .frame(width: 22, height: 18)
                     }
                 }
-                .frame(width: 22, height: 18)
-                .background(
-                    Group {
-                        if itemIndex < 9 {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(.regularMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .stroke(.quaternary, lineWidth: 0.5)
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
-                        } else {
-                            Color.clear
-                        }
-                    }
-                )
                 
                 // Selection indicator (always reserve space)
                 Group {
@@ -245,7 +248,7 @@ struct WindowItemContentView: View {
                 }
                 .frame(width: 24, height: 24)
             }
-            .frame(width: 52) // Fixed width container
+            .frame(width: showNumberKeys ? 52 : 24) // Dynamic width based on settings
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -259,6 +262,11 @@ struct AppItemContentView: View {
     let isSelected: Bool
     let isHovered: Bool
     let itemIndex: Int
+    @EnvironmentObject private var settingsManager: SettingsManager
+    
+    private var showNumberKeys: Bool {
+        settingsManager.settings.showNumberKeys
+    }
     
     var body: some View {
         HStack(spacing: 16) {
@@ -300,33 +308,29 @@ struct AppItemContentView: View {
             
             // Fixed width container for right indicators
             HStack(spacing: 8) {
-                // Number key indicator (always reserve space)
+                // Number key indicator (conditionally display based on settings)
                 Group {
-                    if itemIndex < 9 {
+                    if showNumberKeys && itemIndex < 9 {
                         Text("\(itemIndex + 1)")
                             .font(.system(.caption, design: .rounded))
                             .fontWeight(.semibold)
                             .foregroundColor(.secondary)
-                    } else {
-                        Text("")
+                            .frame(width: 22, height: 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(.regularMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(.quaternary, lineWidth: 0.5)
+                                    )
+                                    .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                            )
+                    } else if showNumberKeys {
+                        // 保持空间占位以维持布局一致性
+                        Color.clear
+                            .frame(width: 22, height: 18)
                     }
                 }
-                .frame(width: 22, height: 18)
-                .background(
-                    Group {
-                        if itemIndex < 9 {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(.regularMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .stroke(.quaternary, lineWidth: 0.5)
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
-                        } else {
-                            Color.clear
-                        }
-                    }
-                )
                 
                 // Selection indicator (always reserve space)
                 Group {
@@ -342,7 +346,7 @@ struct AppItemContentView: View {
                 }
                 .frame(width: 24, height: 24)
             }
-            .frame(width: 52) // Fixed width container
+            .frame(width: showNumberKeys ? 52 : 24) // Dynamic width based on settings
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)

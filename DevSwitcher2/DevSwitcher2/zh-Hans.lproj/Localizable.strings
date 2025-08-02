@@ -197,6 +197,11 @@
 "more_than_50_results" = "显示前50个结果，请细化搜索条件。";
 "loading_apps_hint" = "正在扫描已安装的应用程序...";
 
+// MARK: - 高级设置 - 切换器视图显示设置
+"switcher_display_section_title" = "切换器视图显示设置";
+"show_number_keys_label" = "显示数字键指示器";
+"show_number_keys_description" = "在切换器中显示数字键指示器(1-9)以便快速选择";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

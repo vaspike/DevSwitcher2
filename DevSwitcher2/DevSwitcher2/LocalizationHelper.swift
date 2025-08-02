@@ -333,6 +333,11 @@ struct LocalizedStrings {
     static let hotkeyApply = "hotkey_apply".localized
     static let hotkeyReset = "hotkey_reset".localized
     
+    // MARK: - Switcher Display Settings
+    static let switcherDisplaySectionTitle = "switcher_display_section_title".localized
+    static let showNumberKeysLabel = "show_number_keys_label".localized
+    static let showNumberKeysDescription = "show_number_keys_description".localized
+    
     // MARK: - About Page
     static let aboutApp = "about_app".localized
     static let version = "version".localized

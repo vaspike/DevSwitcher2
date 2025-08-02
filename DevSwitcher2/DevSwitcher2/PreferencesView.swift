@@ -537,6 +537,21 @@ struct AdvancedSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // 切换器视图显示设置
+            CollapsibleSection(
+                id: "switcher_display_settings",
+                title: LocalizedStrings.switcherDisplaySectionTitle,
+                isExpanded: expandedSections.contains("switcher_display_settings")
+            ) {
+                SwitcherDisplaySettingsView()
+            } onToggle: { isExpanded in
+                if isExpanded {
+                    expandedSections.insert("switcher_display_settings")
+                } else {
+                    expandedSections.remove("switcher_display_settings")
+                }
+            }
+            
             // 窗口标题配置区域
             CollapsibleSection(
                 id: "window_title_config",
@@ -554,7 +569,7 @@ struct AdvancedSettingsView: View {
         }
         .onAppear {
             // 默认展开第一个区域
-            expandedSections.insert("window_title_config")
+            expandedSections.insert("switcher_display_settings")
         }
     }
 }
@@ -1693,6 +1708,47 @@ struct AppMainIconView: View {
         }
         
         return nil
+    }
+}
+
+// MARK: - Switcher Display Settings View
+struct SwitcherDisplaySettingsView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.showNumberKeysLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.showNumberKeysDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { settingsManager.settings.showNumberKeys },
+                        set: { newValue in
+                            settingsManager.updateShowNumberKeys(newValue)
+                        }
+                    ))
+                    .toggleStyle(SwitchToggleStyle())
+                }
+            }
+            .padding(20)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.accentColor.opacity(0.1), lineWidth: 1)
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
     }
 }
 

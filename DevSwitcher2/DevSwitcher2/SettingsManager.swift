@@ -194,6 +194,9 @@ struct AppSettings: Codable {
     // General settings
     var launchAtStartup: Bool
     
+    // Switcher UI settings
+    var showNumberKeys: Bool
+    
     static let `default` = AppSettings(
         modifierKey: .command,
         triggerKey: .grave,
@@ -236,7 +239,9 @@ struct AppSettings: Codable {
         ct2ModifierKey: .command,
         ct2TriggerKey: .tab,
         // General default settings
-        launchAtStartup: false
+        launchAtStartup: false,
+        // Switcher UI default settings
+        showNumberKeys: true
     )
 }
 
@@ -320,6 +325,12 @@ class SettingsManager: ObservableObject {
         
         // Apply launch at startup setting
         setLaunchAtStartup(enabled)
+    }
+    
+    // MARK: - Switcher UI Settings
+    func updateShowNumberKeys(_ enabled: Bool) {
+        settings.showNumberKeys = enabled
+        saveSettings()
     }
     
     private func setLaunchAtStartup(_ enabled: Bool) {

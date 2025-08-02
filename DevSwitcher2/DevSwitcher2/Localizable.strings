@@ -197,6 +197,11 @@
 "more_than_50_results" = "Showing first 50 results. Please refine your search.";
 "loading_apps_hint" = "Scanning installed applications...";
 
+// MARK: - Advanced Settings - Switcher View Display Settings
+"switcher_display_section_title" = "Switcher View Display Settings";
+"show_number_keys_label" = "Show Number Key Indicators";
+"show_number_keys_description" = "Display number key indicators (1-9) in switcher for quick selection";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

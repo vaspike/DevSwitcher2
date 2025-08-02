@@ -101,6 +101,11 @@ struct LocalizedStrings {
     static let languageRestartNote = "language_restart_note".localized
     static let languageRestartNowButton = "language_restart_now_button".localized
     
+    // MARK: - General Settings
+    static let generalSettingsSectionTitle = "general_settings_section_title".localized
+    static let launchAtStartup = "launch_at_startup".localized
+    static let launchAtStartupDescription = "launch_at_startup_description".localized
+    
     // MARK: - DS2 Window Switcher Interface
     static let windowSwitcherTitle = "window_switcher_title".localized
     static func hotkeyHintTemplate(_ modifier: String, _ trigger: String) -> String {

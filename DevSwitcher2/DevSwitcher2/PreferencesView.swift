@@ -90,6 +90,56 @@ struct TabButton: View {
     }
 }
 
+// MARK: - General Settings Section
+struct GeneralSettingsSection: View {
+    @ObservedObject var settingsManager: SettingsManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text(LocalizedStrings.generalSettingsSectionTitle)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+            }
+            
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.launchAtStartup)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        
+                        Text(LocalizedStrings.launchAtStartupDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { settingsManager.settings.launchAtStartup },
+                        set: { newValue in
+                            settingsManager.updateLaunchAtStartup(newValue)
+                        }
+                    ))
+                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                }
+            }
+            .padding(20)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .padding(20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
+
 // MARK: - Language Settings Section
 struct LanguageSettingsSection: View {
     @ObservedObject var languageManager: LanguageManager
@@ -420,6 +470,8 @@ struct CoreSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
             LanguageSettingsSection(languageManager: languageManager)
+            
+            GeneralSettingsSection(settingsManager: settingsManager)
             
             DS2HotkeySettingsSection(
                 selectedModifier: $selectedModifier,

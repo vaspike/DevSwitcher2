@@ -17,6 +17,11 @@
 "language_restart_note" = "更改语言后需要重启应用生效";
 "language_restart_now_button" = "立即重启";
 
+// MARK: - 通用设置
+"general_settings_section_title" = "通用设置";
+"launch_at_startup" = "开机自启动";
+"launch_at_startup_description" = "登录时自动启动 DevSwitcher2";
+
 // MARK: - DS2窗口切换器界面
 "window_switcher_title" = "选择窗口";
 "hotkey_hint_template" = "%@ + %@ 切换";

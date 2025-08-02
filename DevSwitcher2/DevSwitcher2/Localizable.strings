@@ -17,6 +17,11 @@
 "language_restart_note" = "Changes take effect after restarting the application";
 "language_restart_now_button" = "Restart Now";
 
+// MARK: - General Settings
+"general_settings_section_title" = "General Settings";
+"launch_at_startup" = "Launch at Startup";
+"launch_at_startup_description" = "Automatically start DevSwitcher2 when you log in";
+
 // MARK: - DS2 Window Switcher Interface
 "window_switcher_title" = "Select Window";
 "hotkey_hint_template" = "%@ + %@ to switch";

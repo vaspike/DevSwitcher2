@@ -19,7 +19,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.2.1</string>
+	<string>2.3.1</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
@@ -29,7 +29,7 @@
 	<key>NSAccessibilityUsageDescription</key>
 	<string>DevSwitcher2 需要辅助功能权限来获取和切换应用窗口，以提供增强的 Command+` 功能。</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 DevSwitcher2. All rights reserved.</string>
+	<string>Copyright © 2025 River. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSPrincipalClass</key>

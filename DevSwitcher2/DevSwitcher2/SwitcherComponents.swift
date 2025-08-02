@@ -214,10 +214,21 @@ struct WindowItemContentView: View {
                         Text("")
                     }
                 }
-                .frame(width: 20, height: 20)
+                .frame(width: 22, height: 18)
                 .background(
-                    Circle()
-                        .fill(itemIndex < 9 ? Color.secondary.opacity(0.1) : Color.clear)
+                    Group {
+                        if itemIndex < 9 {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.regularMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(.quaternary, lineWidth: 0.5)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                        } else {
+                            Color.clear
+                        }
+                    }
                 )
                 
                 // Selection indicator (always reserve space)
@@ -300,10 +311,21 @@ struct AppItemContentView: View {
                         Text("")
                     }
                 }
-                .frame(width: 20, height: 20)
+                .frame(width: 22, height: 18)
                 .background(
-                    Circle()
-                        .fill(itemIndex < 9 ? Color.secondary.opacity(0.1) : Color.clear)
+                    Group {
+                        if itemIndex < 9 {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.regularMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(.quaternary, lineWidth: 0.5)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                        } else {
+                            Color.clear
+                        }
+                    }
                 )
                 
                 // Selection indicator (always reserve space)

@@ -1199,8 +1199,7 @@ class WindowManager: ObservableObject {
             
         case .keyDown:
             // 处理数字键快速选择 (1-9)
-            if event.keyCode >= 18 && event.keyCode <= 26 { // Key codes for 1-9
-                let numberKey = Int(event.keyCode - 17) // Convert to 1-9
+            if let numberKey = keyCodeToNumberKey(event.keyCode) {
                 Logger.log("🔢 [\(source)] DS2 number key \(numberKey) pressed")
                 selectWindowByNumberKey(numberKey)
                 return nil // 阻止事件传递
@@ -1264,8 +1263,7 @@ class WindowManager: ObservableObject {
             
         case .keyDown:
             // 处理数字键快速选择 (1-9)
-            if event.keyCode >= 18 && event.keyCode <= 26 { // Key codes for 1-9
-                let numberKey = Int(event.keyCode - 17) // Convert to 1-9
+            if let numberKey = keyCodeToNumberKey(event.keyCode) {
                 Logger.log("🔢 [\(source)] CT2 number key \(numberKey) pressed")
                 selectAppByNumberKey(numberKey)
                 return nil // 阻止事件传递
@@ -1279,12 +1277,10 @@ class WindowManager: ObservableObject {
                     if isShiftPressed {
                         Logger.log("🟢 [\(source)] CT2 reverse switch: \(currentAppIndex) -> ", terminator: "")
                         moveToPreviousApp()
-                        print("\(currentAppIndex)")
                     } else {
                         Logger.log("🟢 [\(source)] CT2 forward switch: \(currentAppIndex) -> ", terminator: "")
                         moveToNextApp()
-                        print("\(currentAppIndex)")
-                    }
+                    }	
                     return nil // 阻止事件传递
                 }
             }
@@ -1806,6 +1802,26 @@ class WindowManager: ObservableObject {
         return windowTitles
     }
     
+    // MARK: - Number Key Mapping Helper
+    
+    /// 将键码转换为数字键(1-9)，使用正确的macOS键码映射
+    /// - Parameter keyCode: 键码
+    /// - Returns: 对应的数字键(1-9)，如果不是数字键则返回nil
+    private func keyCodeToNumberKey(_ keyCode: UInt16) -> Int? {
+        switch keyCode {
+        case 18: return 1  // kVK_ANSI_1
+        case 19: return 2  // kVK_ANSI_2
+        case 20: return 3  // kVK_ANSI_3
+        case 21: return 4  // kVK_ANSI_4
+        case 23: return 5  // kVK_ANSI_5
+        case 22: return 6  // kVK_ANSI_6
+        case 26: return 7  // kVK_ANSI_7
+        case 28: return 8  // kVK_ANSI_8
+        case 25: return 9  // kVK_ANSI_9
+        default: return nil
+        }
+    }
+    
     // MARK: - Number Key Global Intercept
     
     /// 启动数字键全局拦截
@@ -1826,9 +1842,8 @@ class WindowManager: ObservableObject {
             // 获取按键码
             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
             
-            // 检查是否为数字键 1-9 (keyCode 18-26)
-            if keyCode >= 18 && keyCode <= 26 {
-                let numberKey = Int(keyCode - 17) // Convert to 1-9
+            // 检查是否为数字键 1-9 (使用正确的键码映射)
+            if let numberKey = windowManager.keyCodeToNumberKey(UInt16(keyCode)) {
                 
                 // 在主线程处理数字键选择
                 DispatchQueue.main.async {

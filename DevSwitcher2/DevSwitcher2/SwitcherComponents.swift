@@ -60,7 +60,7 @@ struct BaseSwitcherView<ItemType>: View {
     let items: [ItemType]
     let currentIndex: Int
     let onItemSelect: (Int) -> Void
-    let itemContentBuilder: (ItemType, Bool, Bool) -> AnyView
+    let itemContentBuilder: (ItemType, Bool, Bool, Int) -> AnyView
     
     @State private var hoveredIndex: Int? = nil
     
@@ -107,7 +107,8 @@ struct BaseSwitcherView<ItemType>: View {
                             itemContentBuilder(
                                 item,
                                 index == currentIndex,
-                                index == hoveredIndex
+                                index == hoveredIndex,
+                                index
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -167,6 +168,7 @@ struct WindowItemContentView: View {
     let window: WindowInfo
     let isSelected: Bool
     let isHovered: Bool
+    let itemIndex: Int
     
     var body: some View {
         HStack(spacing: 16) {
@@ -199,12 +201,40 @@ struct WindowItemContentView: View {
             
             Spacer()
             
-            // Selection indicator
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.accentColor)
-                    .font(.title3)
+            // Fixed width container for right indicators
+            HStack(spacing: 8) {
+                // Number key indicator (always reserve space)
+                Group {
+                    if itemIndex < 9 {
+                        Text("\(itemIndex + 1)")
+                            .font(.system(.caption, design: .rounded))
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("")
+                    }
+                }
+                .frame(width: 20, height: 20)
+                .background(
+                    Circle()
+                        .fill(itemIndex < 9 ? Color.secondary.opacity(0.1) : Color.clear)
+                )
+                
+                // Selection indicator (always reserve space)
+                Group {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.accentColor)
+                            .font(.title3)
+                    } else {
+                        Image(systemName: "circle")
+                            .foregroundColor(.clear)
+                            .font(.title3)
+                    }
+                }
+                .frame(width: 24, height: 24)
             }
+            .frame(width: 52) // Fixed width container
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -217,6 +247,7 @@ struct AppItemContentView: View {
     let app: AppInfo
     let isSelected: Bool
     let isHovered: Bool
+    let itemIndex: Int
     
     var body: some View {
         HStack(spacing: 16) {
@@ -256,12 +287,40 @@ struct AppItemContentView: View {
             
             Spacer()
             
-            // Selection indicator
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.accentColor)
-                    .font(.title3)
+            // Fixed width container for right indicators
+            HStack(spacing: 8) {
+                // Number key indicator (always reserve space)
+                Group {
+                    if itemIndex < 9 {
+                        Text("\(itemIndex + 1)")
+                            .font(.system(.caption, design: .rounded))
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("")
+                    }
+                }
+                .frame(width: 20, height: 20)
+                .background(
+                    Circle()
+                        .fill(itemIndex < 9 ? Color.secondary.opacity(0.1) : Color.clear)
+                )
+                
+                // Selection indicator (always reserve space)
+                Group {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.accentColor)
+                            .font(.title3)
+                    } else {
+                        Image(systemName: "circle")
+                            .foregroundColor(.clear)
+                            .font(.title3)
+                    }
+                }
+                .frame(width: 24, height: 24)
             }
+            .frame(width: 52) // Fixed width container
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -281,12 +340,13 @@ struct DS2SwitcherView: View {
             onItemSelect: { index in
                 windowManager.selectWindow(at: index)
             },
-            itemContentBuilder: { window, isSelected, isHovered in
+            itemContentBuilder: { window, isSelected, isHovered, itemIndex in
                 AnyView(
                     WindowItemContentView(
                         window: window,
                         isSelected: isSelected,
-                        isHovered: isHovered
+                        isHovered: isHovered,
+                        itemIndex: itemIndex
                     )
                 )
             }
@@ -306,12 +366,13 @@ struct CT2SwitcherView: View {
             onItemSelect: { index in
                 windowManager.selectApp(at: index)
             },
-            itemContentBuilder: { app, isSelected, isHovered in
+            itemContentBuilder: { app, isSelected, isHovered, itemIndex in
                 AnyView(
                     AppItemContentView(
                         app: app,
                         isSelected: isSelected,
-                        isHovered: isHovered
+                        isHovered: isHovered,
+                        itemIndex: itemIndex
                     )
                 )
             }

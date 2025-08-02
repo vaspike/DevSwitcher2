@@ -163,7 +163,8 @@ struct LocalizedStrings {
     static let coreSettings = "core_settings".localized
     static let about = "about".localized
     static let preferencesSubtitle = "preferences_subtitle".localized
-    static let settingsTabTitle = "settings_tab_title".localized
+    static let generalSettingsTabTitle = "general_settings_tab_title".localized
+    static let advancedSettingsTabTitle = "advanced_settings_tab_title".localized
     static let aboutTabTitle = "about_tab_title".localized
     static let hotkeySettings = "hotkey_settings".localized
     static let windowTitleConfig = "window_title_config".localized

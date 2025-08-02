@@ -83,7 +83,8 @@
 "settings_tab" = "Settings";
 "about_tab" = "About";
 "preferences_subtitle" = "Configuration & Settings";
-"settings_tab_title" = "Settings";
+"general_settings_tab_title" = "General";
+"advanced_settings_tab_title" = "Advanced";
 "about_tab_title" = "About";
 
 // MARK: - DS2 Settings

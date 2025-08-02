@@ -83,7 +83,8 @@
 "settings_tab" = "设置";
 "about_tab" = "关于";
 "preferences_subtitle" = "配置与设置";
-"settings_tab_title" = "设置";
+"general_settings_tab_title" = "常规";
+"advanced_settings_tab_title" = "高级";
 "about_tab_title" = "关于";
 
 // MARK: - DS2设置

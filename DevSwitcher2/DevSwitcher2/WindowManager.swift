@@ -33,6 +33,7 @@ class WindowManager: ObservableObject {
     private var switcherWindow: NSWindow?
     private var eventMonitor: Any?
     private var globalEventMonitor: Any?
+    private var numberKeyEventTap: CFMachPort?
     
     // Current view type tracking
     private var currentViewType: SwitcherType = .ds2
@@ -91,6 +92,9 @@ class WindowManager: ObservableObject {
         
         // Clean up watchdog timer
         stopModifierKeyWatchdog()
+        
+        // Clean up number key event tap
+        stopNumberKeyGlobalIntercept()
         
         // Clean up AX cache
         Logger.log("🗑️ WindowManager cleanup, releasing \(axElementCache.count) AX elements")
@@ -241,6 +245,9 @@ class WindowManager: ObservableObject {
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
         
+        // 启动数字键全局拦截
+        startNumberKeyGlobalIntercept()
+        
         // 启动修饰键看门狗机制（DS2）
         startModifierKeyWatchdog(for: .ds2)
     }
@@ -291,6 +298,9 @@ class WindowManager: ObservableObject {
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
         
+        // 启动数字键全局拦截
+        startNumberKeyGlobalIntercept()
+        
         // 启动修饰键看门狗机制（CT2）
         startModifierKeyWatchdog(for: .ct2)
     }
@@ -322,6 +332,12 @@ class WindowManager: ObservableObject {
         hideSwitcher()
     }
     
+    func selectWindowByNumberKey(_ numberKey: Int) {
+        let index = numberKey - 1 // Convert 1-9 to 0-8
+        guard index >= 0 && index < windows.count && index < 9 else { return }
+        selectWindow(at: index)
+    }
+    
     // MARK: - CT2 Functionality: App Switching Related Methods
     func moveToNextApp() {
         guard !apps.isEmpty else { return }
@@ -339,6 +355,12 @@ class WindowManager: ObservableObject {
         guard index < apps.count else { return }
         currentAppIndex = index
         hideAppSwitcher()
+    }
+    
+    func selectAppByNumberKey(_ numberKey: Int) {
+        let index = numberKey - 1 // Convert 1-9 to 0-8
+        guard index >= 0 && index < apps.count && index < 9 else { return }
+        selectApp(at: index)
     }
     
     // MARK: - EventTap Support Methods
@@ -1176,6 +1198,14 @@ class WindowManager: ObservableObject {
             }
             
         case .keyDown:
+            // 处理数字键快速选择 (1-9)
+            if event.keyCode >= 18 && event.keyCode <= 26 { // Key codes for 1-9
+                let numberKey = Int(event.keyCode - 17) // Convert to 1-9
+                Logger.log("🔢 [\(source)] DS2 number key \(numberKey) pressed")
+                selectWindowByNumberKey(numberKey)
+                return nil // 阻止事件传递
+            }
+            
             // 处理触发键
             if event.keyCode == UInt16(settings.triggerKey.keyCode) {
                 if event.modifierFlags.contains(settings.modifierKey.eventModifier) {
@@ -1233,6 +1263,14 @@ class WindowManager: ObservableObject {
             }
             
         case .keyDown:
+            // 处理数字键快速选择 (1-9)
+            if event.keyCode >= 18 && event.keyCode <= 26 { // Key codes for 1-9
+                let numberKey = Int(event.keyCode - 17) // Convert to 1-9
+                Logger.log("🔢 [\(source)] CT2 number key \(numberKey) pressed")
+                selectAppByNumberKey(numberKey)
+                return nil // 阻止事件传递
+            }
+            
             // 处理触发键
             if event.keyCode == UInt16(settings.ct2TriggerKey.keyCode) {
                 if event.modifierFlags.contains(settings.ct2ModifierKey.eventModifier) {
@@ -1306,6 +1344,9 @@ class WindowManager: ObservableObject {
         // 停止修饰键看门狗
         stopModifierKeyWatchdog()
         
+        // 停止数字键全局拦截
+        stopNumberKeyGlobalIntercept()
+        
         // 立即清理事件监听器
         cleanupEventMonitors()
         
@@ -1346,6 +1387,9 @@ class WindowManager: ObservableObject {
         
         // 停止修饰键看门狗
         stopModifierKeyWatchdog()
+        
+        // 停止数字键全局拦截
+        stopNumberKeyGlobalIntercept()
         
         // 立即清理事件监听器
         cleanupEventMonitors()
@@ -1760,5 +1804,85 @@ class WindowManager: ObservableObject {
         }
         
         return windowTitles
+    }
+    
+    // MARK: - Number Key Global Intercept
+    
+    /// 启动数字键全局拦截
+    private func startNumberKeyGlobalIntercept() {
+        // 如果已经存在拦截器，先停止
+        stopNumberKeyGlobalIntercept()
+        
+        // 创建事件回调
+        let eventCallback: CGEventTapCallBack = { (proxy, type, event, refcon) in
+            // 获取 WindowManager 实例
+            let windowManager = Unmanaged<WindowManager>.fromOpaque(refcon!).takeUnretainedValue()
+            
+            // 只处理按键按下事件
+            guard type == .keyDown else {
+                return Unmanaged.passRetained(event)
+            }
+            
+            // 获取按键码
+            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            
+            // 检查是否为数字键 1-9 (keyCode 18-26)
+            if keyCode >= 18 && keyCode <= 26 {
+                let numberKey = Int(keyCode - 17) // Convert to 1-9
+                
+                // 在主线程处理数字键选择
+                DispatchQueue.main.async {
+                    if windowManager.isShowingSwitcher {
+                        Logger.log("🔢 [Global] DS2 number key \(numberKey) intercepted")
+                        windowManager.selectWindowByNumberKey(numberKey)
+                    } else if windowManager.isShowingAppSwitcher {
+                        Logger.log("🔢 [Global] CT2 number key \(numberKey) intercepted")
+                        windowManager.selectAppByNumberKey(numberKey)
+                    }
+                }
+                
+                // 阻止事件传递给其他应用
+                return nil
+            }
+            
+            // 其他按键正常传递
+            return Unmanaged.passRetained(event)
+        }
+        
+        // 创建事件拦截器
+        let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        
+        numberKeyEventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: eventCallback,
+            userInfo: selfPtr
+        )
+        
+        if let eventTap = numberKeyEventTap {
+            // 创建 run loop source
+            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+            
+            // 启用事件拦截
+            CGEvent.tapEnable(tap: eventTap, enable: true)
+            
+            Logger.log("🎯 Number key global intercept started")
+        } else {
+            Logger.log("❌ Failed to create number key event tap")
+        }
+    }
+    
+    /// 停止数字键全局拦截
+    private func stopNumberKeyGlobalIntercept() {
+        if let eventTap = numberKeyEventTap {
+            CGEvent.tapEnable(tap: eventTap, enable: false)
+            CFMachPortInvalidate(eventTap)
+            numberKeyEventTap = nil
+            Logger.log("🛑 Number key global intercept stopped")
+        }
     }
 } 

@@ -30,12 +30,16 @@ struct PreferencesView: View {
                 
                 // Tab selector
                 HStack(spacing: 4) {
-                    TabButton(title: LocalizedStrings.settingsTabTitle, isSelected: selectedTab == 0) {
+                    TabButton(title: LocalizedStrings.generalSettingsTabTitle, isSelected: selectedTab == 0) {
                         selectedTab = 0
                     }
                     
-                    TabButton(title: LocalizedStrings.aboutTabTitle, isSelected: selectedTab == 1) {
+                    TabButton(title: LocalizedStrings.advancedSettingsTabTitle, isSelected: selectedTab == 1) {
                         selectedTab = 1
+                    }
+                    
+                    TabButton(title: LocalizedStrings.aboutTabTitle, isSelected: selectedTab == 2) {
+                        selectedTab = 2
                     }
                 }
                 .padding(4)
@@ -50,7 +54,9 @@ struct PreferencesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     if selectedTab == 0 {
-                        CoreSettingsView()
+                        GeneralSettingsView()
+                    } else if selectedTab == 1 {
+                        AdvancedSettingsView()
                     } else {
                         AboutView()
                     }
@@ -445,8 +451,8 @@ struct CT2HotkeySettingsSection: View {
     }
 }
 
-// MARK: - Core Settings View
-struct CoreSettingsView: View {
+// MARK: - General Settings View
+struct GeneralSettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
     @StateObject private var languageManager = LanguageManager.shared
     @State private var selectedModifier: ModifierKey
@@ -488,9 +494,6 @@ struct CoreSettingsView: View {
                 onReset: resetCT2HotkeySettings,
                 settingsManager: settingsManager
             )
-            
-            // 窗口标题配置
-            WindowTitleConfigView()
         }
         .alert(LocalizedStrings.hotkeyConflictTitle, isPresented: $showingHotkeyWarning) {
             Button(LocalizedStrings.confirm, role: .cancel) { }
@@ -525,6 +528,89 @@ struct CoreSettingsView: View {
         selectedCT2Modifier = .command
         selectedCT2Trigger = .tab
         applyCT2HotkeySettings()
+    }
+}
+
+// MARK: - Advanced Settings View
+struct AdvancedSettingsView: View {
+    @State private var expandedSections: Set<String> = []
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // 窗口标题配置区域
+            CollapsibleSection(
+                id: "window_title_config",
+                title: LocalizedStrings.windowTitleSectionTitle,
+                isExpanded: expandedSections.contains("window_title_config")
+            ) {
+                WindowTitleConfigView()
+            } onToggle: { isExpanded in
+                if isExpanded {
+                    expandedSections.insert("window_title_config")
+                } else {
+                    expandedSections.remove("window_title_config")
+                }
+            }
+        }
+        .onAppear {
+            // 默认展开第一个区域
+            expandedSections.insert("window_title_config")
+        }
+    }
+}
+
+// MARK: - Collapsible Section Component
+struct CollapsibleSection<Content: View>: View {
+    let id: String
+    let title: String
+    let isExpanded: Bool
+    let content: () -> Content
+    let onToggle: (Bool) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header with toggle button
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    onToggle(!isExpanded)
+                }
+            }) {
+                HStack {
+                    Text(title)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 0 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Content area with animation
+            if isExpanded {
+                VStack(spacing: 0) {
+                    content()
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .top)),
+                    removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .top))
+                ))
+                .padding(.top, 16)
+            }
+        }
     }
 }
 

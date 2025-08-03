@@ -257,7 +257,7 @@
 
 // MARK: - About Page
 "about_app" = "About DevSwitcher2";
-"version" = "Version 2.3.1";
+"version" = "Version 2.4.1";
 "app_description" = "DevSwitcher2 is a modern macOS productivity tool that enhances your window and application switching experience with dual-mode switching capabilities.";
 "main_features" = "Main Features:";
 "feature_1" = "• DS2 Mode: Enhanced same-app window switching";

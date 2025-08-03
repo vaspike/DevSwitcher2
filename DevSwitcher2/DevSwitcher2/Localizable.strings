@@ -212,6 +212,12 @@
 "switcher_vertical_position_description" = "Adjust switcher's vertical position on screen (distance from top / screen height)";
 "reset_to_golden_ratio" = "Reset";
 
+// MARK: - Advanced Settings - Switcher Header Style Settings
+"switcher_header_style_label" = "Header Style";
+"switcher_header_style_description" = "Choose the display style for the switcher header";
+"header_style_default" = "Default";
+"header_style_simplified" = "Simplified";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

@@ -348,6 +348,12 @@ struct LocalizedStrings {
     static let switcherVerticalPositionDescription = "switcher_vertical_position_description".localized
     static let resetToGoldenRatio = "reset_to_golden_ratio".localized
     
+    // MARK: - Switcher Header Style Settings
+    static let switcherHeaderStyleLabel = "switcher_header_style_label".localized
+    static let switcherHeaderStyleDescription = "switcher_header_style_description".localized
+    static let headerStyleDefault = "header_style_default".localized
+    static let headerStyleSimplified = "header_style_simplified".localized
+    
     // MARK: - About Page
     static let aboutApp = "about_app".localized
     static let version = "version".localized

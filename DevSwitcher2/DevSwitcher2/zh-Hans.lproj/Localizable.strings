@@ -212,6 +212,12 @@
 "switcher_vertical_position_description" = "调整切换器在屏幕上的垂直位置（距离顶端 / 屏幕高度）";
 "reset_to_golden_ratio" = "重置";
 
+// MARK: - 高级设置 - 切换器标题栏样式设置
+"switcher_header_style_label" = "标题栏样式";
+"switcher_header_style_description" = "选择切换器标题栏的显示样式";
+"header_style_default" = "默认";
+"header_style_simplified" = "简化";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

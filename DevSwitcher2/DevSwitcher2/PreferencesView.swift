@@ -1786,6 +1786,38 @@ struct SwitcherDisplaySettingsView: View {
                     
                     VerticalPositionControl()
                 }
+                
+                // Divider between settings
+                Divider()
+                    .padding(.horizontal, -20)
+                
+                // Header Style Setting
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.switcherHeaderStyleLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.switcherHeaderStyleDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Picker("", selection: Binding(
+                        get: { settingsManager.settings.switcherHeaderStyle },
+                        set: { newValue in
+                            settingsManager.updateSwitcherHeaderStyle(newValue)
+                        }
+                    )) {
+                        ForEach(SwitcherHeaderStyle.allCases, id: \.self) { style in
+                            Text(style.displayName).tag(style)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(width: 200)
+                }
             }
             .padding(20)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))

@@ -163,6 +163,21 @@ enum TitleExtractionStrategy: String, CaseIterable, Codable {
     }
 }
 
+// MARK: - Switcher Header Style
+enum SwitcherHeaderStyle: String, CaseIterable, Codable {
+    case `default` = "default"
+    case simplified = "simplified"
+    
+    var displayName: String {
+        switch self {
+        case .default:
+            return LocalizedStrings.headerStyleDefault
+        case .simplified:
+            return LocalizedStrings.headerStyleSimplified
+        }
+    }
+}
+
 // MARK: - App Title Configuration
 struct AppTitleConfig: Codable {
     let bundleId: String
@@ -202,6 +217,9 @@ struct AppSettings: Codable {
     
     // Switcher position settings
     var switcherVerticalPosition: Double // 0.1 to 0.8, default 0.39 (golden ratio)
+    
+    // Switcher header style settings
+    var switcherHeaderStyle: SwitcherHeaderStyle
     
     static let `default` = AppSettings(
         modifierKey: .command,
@@ -251,7 +269,9 @@ struct AppSettings: Codable {
         // Switcher behavior default settings
         switcherFollowActiveWindow: true,
         // Switcher position default settings
-        switcherVerticalPosition: 0.39
+        switcherVerticalPosition: 0.39,
+        // Switcher header style default settings
+        switcherHeaderStyle: .default
     )
 }
 
@@ -354,6 +374,12 @@ class SettingsManager: ObservableObject {
         // Clamp the value between 0.1 and 0.8
         let clampedPosition = max(0.1, min(0.8, position))
         settings.switcherVerticalPosition = clampedPosition
+        saveSettings()
+    }
+    
+    // MARK: - Switcher Header Style Settings
+    func updateSwitcherHeaderStyle(_ style: SwitcherHeaderStyle) {
+        settings.switcherHeaderStyle = style
         saveSettings()
     }
     

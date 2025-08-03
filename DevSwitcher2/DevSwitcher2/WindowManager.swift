@@ -201,8 +201,137 @@ class WindowManager: ObservableObject {
         // Initial content view will be set on first display
         switcherWindow?.contentView = NSView() // Temporary empty view
         
-        // Center display
-        switcherWindow?.center()
+        // Position will be set when displaying
+    }
+    
+    // MARK: - Switcher Window Positioning
+    private func positionSwitcherWindow() {
+        guard let window = switcherWindow else { return }
+        
+        let targetScreen: NSScreen?
+        
+        if settingsManager.settings.switcherFollowActiveWindow {
+            // 跟随活动窗口：优先使用活动窗口所在显示器，没有则使用0号窗口显示器
+            targetScreen = getActiveWindowScreen()
+        } else {
+            // 始终显示在主显示器
+            targetScreen = getPrimaryScreen()
+        }
+        
+        // 确保目标显示器有效，否则使用主显示器作为备用
+        let finalScreen = targetScreen ?? NSScreen.main ?? NSScreen.screens.first
+        
+        if let screen = finalScreen {
+            // 计算窗口在目标显示器上的居中位置
+            let screenFrame = screen.visibleFrame
+            let windowSize = window.frame.size
+            
+            let x = screenFrame.midX - windowSize.width / 2
+            let y = screenFrame.midY - windowSize.height / 2
+            
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+            
+            Logger.log("🖥️ Positioned switcher on screen: \(getDisplayName(for: screen))")
+        }
+    }
+    
+    private func getActiveWindowScreen() -> NSScreen? {
+        // 首先尝试获取系统当前获得焦点的窗口的显示器
+        if let focusedWindowScreen = getFocusedWindowScreen() {
+            return focusedWindowScreen
+        }
+        
+        // 如果没有获得焦点的窗口，使用0号窗口的显示器
+        if !windows.isEmpty {
+            let firstWindow = windows[0]
+            return getWindowScreen(windowID: firstWindow.windowID)
+        }
+        
+        // 如果都没有，返回nil（将使用主显示器作为备用）
+        return nil
+    }
+    
+    private func getFocusedWindowScreen() -> NSScreen? {
+        // 尝试通过AX API获取当前焦点窗口
+        let systemWideElement = AXUIElementCreateSystemWide()
+        var focusedWindow: AnyObject?
+        
+        let result = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedWindowAttribute as CFString, &focusedWindow)
+        
+        if result == .success, let windowElement = focusedWindow {
+            // 获取窗口位置
+            var positionValue: AnyObject?
+            let posResult = AXUIElementCopyAttributeValue(windowElement as! AXUIElement, kAXPositionAttribute as CFString, &positionValue)
+            
+            if posResult == .success, let position = positionValue {
+                var point = CGPoint.zero
+                if AXValueGetValue(position as! AXValue, .cgPoint, &point) {
+                    // 根据窗口位置找到对应的显示器
+                    for screen in NSScreen.screens {
+                        if screen.frame.contains(point) {
+                            return screen
+                        }
+                    }
+                }
+            }
+        }
+        
+        return nil
+    }
+    
+    private func getWindowScreen(windowID: CGWindowID) -> NSScreen? {
+        // 从窗口信息获取窗口位置
+        guard let windowList = CGWindowListCopyWindowInfo([.optionIncludingWindow], windowID) as? [[String: Any]],
+              let windowInfo = windowList.first,
+              let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
+              let x = bounds["X"] as? CGFloat,
+              let y = bounds["Y"] as? CGFloat else {
+            return nil
+        }
+        
+        let windowPoint = CGPoint(x: x, y: y)
+        
+        // 找到包含该点的显示器
+        for screen in NSScreen.screens {
+            if screen.frame.contains(windowPoint) {
+                return screen
+            }
+        }
+        
+        return nil
+    }
+    
+    private func getPrimaryScreen() -> NSScreen? {
+        // 使用 CGDisplayIsMain 找到主显示器
+        for screen in NSScreen.screens {
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                if CGDisplayIsMain(displayID) != 0 {
+                    return screen
+                }
+            }
+        }
+        // 如果找不到，返回 NSScreen.main 作为备用
+        return NSScreen.main
+    }
+    
+    private func getDisplayName(for screen: NSScreen?) -> String {
+        guard let screen = screen else { return "Unknown" }
+        
+        // 使用已有的方法获取显示器名称
+        if #available(macOS 10.15, *) {
+            return screen.localizedName
+        } else {
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                if CGDisplayIsBuiltin(displayID) != 0 {
+                    return "Built-in Display"
+                } else {
+                    return "External Display (\(displayID))"
+                }
+            }
+            return "Unknown Display"
+        }
     }
     
     func showWindowSwitcher() {
@@ -229,6 +358,9 @@ class WindowManager: ObservableObject {
         // 确保切换器窗口内容为DS2视图
         currentViewType = .ds2
         switcherWindow?.contentView = createDS2HostingView()
+        
+        // 根据设置定位切换器窗口
+        positionSwitcherWindow()
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)
@@ -282,6 +414,9 @@ class WindowManager: ObservableObject {
         // 更新切换器窗口内容为CT2视图
         currentViewType = .ct2
         switcherWindow?.contentView = createCT2HostingView()
+        
+        // 根据设置定位切换器窗口
+        positionSwitcherWindow()
         
         // 显示切换器窗口
         switcherWindow?.makeKeyAndOrderFront(nil)

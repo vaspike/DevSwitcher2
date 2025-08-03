@@ -1717,7 +1717,8 @@ struct SwitcherDisplaySettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 20) {
+                // Show Number Keys Setting
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(LocalizedStrings.showNumberKeysLabel)
@@ -1735,6 +1736,33 @@ struct SwitcherDisplaySettingsView: View {
                         get: { settingsManager.settings.showNumberKeys },
                         set: { newValue in
                             settingsManager.updateShowNumberKeys(newValue)
+                        }
+                    ))
+                    .toggleStyle(SwitchToggleStyle())
+                }
+                
+                // Divider between settings
+                Divider()
+                    .padding(.horizontal, -20)
+                
+                // Follow Active Window Setting
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.followActiveWindowLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.followActiveWindowDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { settingsManager.settings.switcherFollowActiveWindow },
+                        set: { newValue in
+                            settingsManager.updateSwitcherFollowActiveWindow(newValue)
                         }
                     ))
                     .toggleStyle(SwitchToggleStyle())

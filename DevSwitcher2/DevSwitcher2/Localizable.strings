@@ -202,6 +202,11 @@
 "show_number_keys_label" = "Show Number Key Indicators";
 "show_number_keys_description" = "Display number key indicators (1-9) in switcher for quick selection";
 
+// MARK: - Advanced Settings - Switcher Behavior Settings
+"switcher_behavior_section_title" = "Switcher Behavior Settings";
+"follow_active_window_label" = "Follow Active Window";
+"follow_active_window_description" = "Display switcher on the same screen as the active window, otherwise always on primary display";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

@@ -338,6 +338,11 @@ struct LocalizedStrings {
     static let showNumberKeysLabel = "show_number_keys_label".localized
     static let showNumberKeysDescription = "show_number_keys_description".localized
     
+    // MARK: - Switcher Behavior Settings
+    static let switcherBehaviorSectionTitle = "switcher_behavior_section_title".localized
+    static let followActiveWindowLabel = "follow_active_window_label".localized
+    static let followActiveWindowDescription = "follow_active_window_description".localized
+    
     // MARK: - About Page
     static let aboutApp = "about_app".localized
     static let version = "version".localized

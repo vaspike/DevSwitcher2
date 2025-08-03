@@ -202,6 +202,11 @@
 "show_number_keys_label" = "显示数字键指示器";
 "show_number_keys_description" = "在切换器中显示数字键指示器(1-9)以便快速选择";
 
+// MARK: - 高级设置 - 切换器行为设置
+"switcher_behavior_section_title" = "切换器行为设置";
+"follow_active_window_label" = "跟随活动窗口";
+"follow_active_window_description" = "切换器显示在活动窗口所在的显示器上，否则始终显示在主显示器上";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import AppKit
+import CoreGraphics
 
 // MARK: - Switcher Type Enum
 enum SwitcherType {
@@ -151,6 +152,63 @@ struct BaseSwitcherView<ItemType>: View {
             return "rectangle.2.swap"
         case .ct2:
             return "rectangle.3.group"
+        }
+    }
+    
+    private func logDisplayInfo() {
+        let currentScreen = getCurrentFocusedScreen()
+        let primaryScreen = getPrimaryScreen()
+        
+        let currentDisplayName = getDisplayName(for: currentScreen)
+        let primaryDisplayName = getDisplayName(for: primaryScreen)
+        
+        Logger.log("🖥️ Switcher rendered - Current display: \(currentDisplayName), Primary display: \(primaryDisplayName)")
+    }
+    
+    private func getCurrentFocusedScreen() -> NSScreen? {
+        let mouseLocation = NSEvent.mouseLocation
+        for screen in NSScreen.screens {
+            if screen.frame.contains(mouseLocation) {
+                return screen
+            }
+        }
+        return NSScreen.main
+    }
+    
+    private func getPrimaryScreen() -> NSScreen? {
+        // 使用 CGDisplayIsMain 找到主显示器
+        for screen in NSScreen.screens {
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                if CGDisplayIsMain(displayID) != 0 {
+                    return screen
+                }
+            }
+        }
+        // 如果找不到，返回 NSScreen.main 作为备用
+        return NSScreen.main
+    }
+    
+    private func getDisplayName(for screen: NSScreen?) -> String {
+        guard let screen = screen else { return "Unknown" }
+        
+        // macOS 10.15+ 使用 localizedName
+        if #available(macOS 10.15, *) {
+            return screen.localizedName
+        } else {
+            // 对于旧版本 macOS，使用设备描述信息
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                
+                // 检查是否为内置显示器
+                if CGDisplayIsBuiltin(displayID) != 0 {
+                    return "Built-in Display"
+                } else {
+                    // 外部显示器，尝试获取更多信息
+                    return "External Display (\(displayID))"
+                }
+            }
+            return "Unknown Display"
         }
     }
     

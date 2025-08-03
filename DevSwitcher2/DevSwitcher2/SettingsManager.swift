@@ -197,6 +197,9 @@ struct AppSettings: Codable {
     // Switcher UI settings
     var showNumberKeys: Bool
     
+    // Switcher behavior settings
+    var switcherFollowActiveWindow: Bool
+    
     static let `default` = AppSettings(
         modifierKey: .command,
         triggerKey: .grave,
@@ -241,7 +244,9 @@ struct AppSettings: Codable {
         // General default settings
         launchAtStartup: false,
         // Switcher UI default settings
-        showNumberKeys: true
+        showNumberKeys: true,
+        // Switcher behavior default settings
+        switcherFollowActiveWindow: true
     )
 }
 
@@ -330,6 +335,12 @@ class SettingsManager: ObservableObject {
     // MARK: - Switcher UI Settings
     func updateShowNumberKeys(_ enabled: Bool) {
         settings.showNumberKeys = enabled
+        saveSettings()
+    }
+    
+    // MARK: - Switcher Behavior Settings
+    func updateSwitcherFollowActiveWindow(_ enabled: Bool) {
+        settings.switcherFollowActiveWindow = enabled
         saveSettings()
     }
     

@@ -121,3 +121,5 @@ signed-release
 *.dmg
 DevSwitcher2.app
 .local
+logo.png
+.vscode

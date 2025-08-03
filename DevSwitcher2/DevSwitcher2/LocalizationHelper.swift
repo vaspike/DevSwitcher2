@@ -343,6 +343,11 @@ struct LocalizedStrings {
     static let followActiveWindowLabel = "follow_active_window_label".localized
     static let followActiveWindowDescription = "follow_active_window_description".localized
     
+    // MARK: - Switcher Position Settings
+    static let switcherVerticalPositionLabel = "switcher_vertical_position_label".localized
+    static let switcherVerticalPositionDescription = "switcher_vertical_position_description".localized
+    static let resetToGoldenRatio = "reset_to_golden_ratio".localized
+    
     // MARK: - About Page
     static let aboutApp = "about_app".localized
     static let version = "version".localized

@@ -207,6 +207,11 @@
 "follow_active_window_label" = "跟随活动窗口";
 "follow_active_window_description" = "切换器显示在活动窗口所在的显示器上，否则始终显示在主显示器上";
 
+// MARK: - 高级设置 - 切换器位置设置
+"switcher_vertical_position_label" = "垂直位置";
+"switcher_vertical_position_description" = "调整切换器在屏幕上的垂直位置（距离顶端 / 屏幕高度）";
+"reset_to_golden_ratio" = "重置";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

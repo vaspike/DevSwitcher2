@@ -222,16 +222,20 @@ class WindowManager: ObservableObject {
         let finalScreen = targetScreen ?? NSScreen.main ?? NSScreen.screens.first
         
         if let screen = finalScreen {
-            // 计算窗口在目标显示器上的居中位置
+            // 计算窗口在目标显示器上的位置
             let screenFrame = screen.visibleFrame
             let windowSize = window.frame.size
             
+            // 水平居中
             let x = screenFrame.midX - windowSize.width / 2
-            let y = screenFrame.midY - windowSize.height / 2
+            
+            // 垂直位置根据用户设置
+            let verticalRatio = settingsManager.settings.switcherVerticalPosition
+            let y = screenFrame.maxY - (screenFrame.height * verticalRatio) - windowSize.height / 2
             
             window.setFrameOrigin(NSPoint(x: x, y: y))
             
-            Logger.log("🖥️ Positioned switcher on screen: \(getDisplayName(for: screen))")
+            Logger.log("🖥️ Positioned switcher on screen: \(getDisplayName(for: screen)) at vertical ratio: \(String(format: "%.2f", verticalRatio))")
         }
     }
     

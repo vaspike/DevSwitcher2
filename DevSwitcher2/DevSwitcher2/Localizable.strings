@@ -207,6 +207,11 @@
 "follow_active_window_label" = "Follow Active Window";
 "follow_active_window_description" = "Display switcher on the same screen as the active window, otherwise always on primary display";
 
+// MARK: - Advanced Settings - Switcher Position Settings
+"switcher_vertical_position_label" = "Vertical Position";
+"switcher_vertical_position_description" = "Adjust switcher's vertical position on screen (distance from top / screen height)";
+"reset_to_golden_ratio" = "Reset";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

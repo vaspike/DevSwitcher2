@@ -200,6 +200,9 @@ struct AppSettings: Codable {
     // Switcher behavior settings
     var switcherFollowActiveWindow: Bool
     
+    // Switcher position settings
+    var switcherVerticalPosition: Double // 0.1 to 0.8, default 0.39 (golden ratio)
+    
     static let `default` = AppSettings(
         modifierKey: .command,
         triggerKey: .grave,
@@ -246,7 +249,9 @@ struct AppSettings: Codable {
         // Switcher UI default settings
         showNumberKeys: true,
         // Switcher behavior default settings
-        switcherFollowActiveWindow: true
+        switcherFollowActiveWindow: true,
+        // Switcher position default settings
+        switcherVerticalPosition: 0.39
     )
 }
 
@@ -341,6 +346,14 @@ class SettingsManager: ObservableObject {
     // MARK: - Switcher Behavior Settings
     func updateSwitcherFollowActiveWindow(_ enabled: Bool) {
         settings.switcherFollowActiveWindow = enabled
+        saveSettings()
+    }
+    
+    // MARK: - Switcher Position Settings
+    func updateSwitcherVerticalPosition(_ position: Double) {
+        // Clamp the value between 0.1 and 0.8
+        let clampedPosition = max(0.1, min(0.8, position))
+        settings.switcherVerticalPosition = clampedPosition
         saveSettings()
     }
     

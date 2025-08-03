@@ -1767,6 +1767,25 @@ struct SwitcherDisplaySettingsView: View {
                     ))
                     .toggleStyle(SwitchToggleStyle())
                 }
+                
+                // Divider between settings
+                Divider()
+                    .padding(.horizontal, -20)
+                
+                // Vertical Position Setting
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.switcherVerticalPositionLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.switcherVerticalPositionDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    VerticalPositionControl()
+                }
             }
             .padding(20)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -1777,6 +1796,66 @@ struct SwitcherDisplaySettingsView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+    }
+}
+
+// MARK: - Vertical Position Control
+struct VerticalPositionControl: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    @State private var textFieldValue: String = ""
+    
+    private var currentPosition: Double {
+        settingsManager.settings.switcherVerticalPosition
+    }
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // Slider and TextField row
+            HStack(spacing: 12) {
+                // Slider
+                Slider(
+                    value: Binding(
+                        get: { currentPosition },
+                        set: { newValue in
+                            settingsManager.updateSwitcherVerticalPosition(newValue)
+                            textFieldValue = String(format: "%.2f", newValue)
+                        }
+                    ),
+                    in: 0.1...0.8,
+                    step: 0.01
+                )
+                .frame(minWidth: 120)
+                
+                // Value display (read-only)
+                Text(textFieldValue)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(width: 60, height: 22)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    )
+                
+                // Reset button
+                Button(LocalizedStrings.resetToGoldenRatio) {
+                    settingsManager.updateSwitcherVerticalPosition(0.39)
+                    textFieldValue = "0.39"
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+            
+            // Current value display
+            Text("Current: \(String(format: "%.1f%%", currentPosition * 100))")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .onAppear {
+            textFieldValue = String(format: "%.2f", currentPosition)
+        }
+        .onChange(of: currentPosition) { newValue in
+            textFieldValue = String(format: "%.2f", newValue)
+        }
     }
 }
 

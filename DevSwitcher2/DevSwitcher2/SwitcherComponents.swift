@@ -12,7 +12,7 @@ import CoreGraphics
 
 // MARK: - AnyShape Helper
 struct AnyShape: Shape {
-    private let _path: (CGRect) -> Path
+    private let _path: @Sendable (CGRect) -> Path
     
     init<S: Shape>(_ shape: S) {
         _path = { rect in
@@ -35,8 +35,8 @@ struct CustomUnevenRoundedRectangle: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        let width = rect.width
-        let height = rect.height
+        let _ = rect.width
+        let _ = rect.height
         
         // Start from top-left + radius
         path.move(to: CGPoint(x: rect.minX + topLeadingRadius, y: rect.minY))
@@ -106,26 +106,6 @@ protocol SwitcherConfig {
     var title: String { get }
 }
 
-// MARK: - App Info Data Structure
-struct AppInfo {
-    let bundleId: String
-    let processID: pid_t
-    let appName: String
-    let firstWindow: WindowInfo?  // First window of this app
-    let windowCount: Int         // Total window count of this app
-    let isActive: Bool           // Whether it's the currently active app
-    let lastUsedTime: Date?      // Last used time
-    
-    init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo], isActive: Bool = false, lastUsedTime: Date? = nil) {
-        self.bundleId = bundleId
-        self.processID = processID
-        self.appName = appName
-        self.firstWindow = windows.first
-        self.windowCount = windows.count
-        self.isActive = isActive
-        self.lastUsedTime = lastUsedTime
-    }
-}
 
 // MARK: - DS2 Configuration
 struct DS2Config: SwitcherConfig {
@@ -151,6 +131,19 @@ struct BaseSwitcherView<ItemType>: View {
     @StateObject private var settingsManager = SettingsManager.shared
     
     var body: some View {
+        Group {
+            switch settingsManager.settings.switcherLayoutStyle {
+            case .list:
+                listLayoutView
+            case .circular:
+                circularLayoutView
+            }
+        }
+        .environmentObject(settingsManager)
+    }
+    
+    // MARK: - List Layout View
+    private var listLayoutView: some View {
         VStack(spacing: 0) {
             // 只有在非简化模式下才显示header
             headerView
@@ -160,7 +153,17 @@ struct BaseSwitcherView<ItemType>: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
         .frame(maxWidth: 600, maxHeight: 400)
-        .environmentObject(settingsManager)
+    }
+    
+    // MARK: - Circular Layout View
+    private var circularLayoutView: some View {
+        // For circular layout, always use simplified header style (no header)
+        CircularLayoutView(
+            items: items,
+            currentIndex: currentIndex,
+            onItemSelect: onItemSelect,
+            itemContentBuilder: { _, _, _, _ in AnyView(EmptyView()) } // Not used in new implementation
+        )
     }
     
     // MARK: - Header View
@@ -617,3 +620,250 @@ struct CT2SwitcherView: View {
         )
     }
 }
+
+// MARK: - Arc Sector Shape for Ring Segments
+struct ArcSector: Shape {
+    let startAngle: Angle
+    let endAngle: Angle
+    let innerRadius: CGFloat
+    let outerRadius: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        
+        // Create the outer arc
+        path.addArc(center: center, radius: outerRadius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
+        
+        // Create the inner arc (reverse direction)
+        path.addArc(center: center, radius: innerRadius, startAngle: endAngle, endAngle: startAngle, clockwise: true)
+        
+        // Close the path
+        path.closeSubpath()
+        
+        return path
+    }
+}
+
+// MARK: - Circular Layout View (Ring with Sectors)
+struct CircularLayoutView<ItemType>: View {
+    let items: [ItemType]
+    let currentIndex: Int
+    let onItemSelect: (Int) -> Void
+    let itemContentBuilder: (ItemType, Bool, Bool, Int) -> AnyView
+    
+    @State private var hoveredIndex: Int? = nil
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    // Ring layout parameters - dynamic based on settings
+    private var layoutSizeMultiplier: CGFloat {
+        CGFloat(settingsManager.settings.circularLayoutSize)
+    }
+    
+    private var outerRadius: CGFloat {
+        // Base size: 150, grows to 200 at max size (2.0)
+        100 + (75 * layoutSizeMultiplier)
+    }
+    
+    private var innerRadius: CGFloat {
+        // Base size: 100, grows to 120 at max size (2.0) - grows slower than outer
+        80 + (20 * layoutSizeMultiplier)
+    }
+    
+    private var ringSize: CGFloat {
+        (outerRadius + 40) * 2
+    }
+    
+    private var iconSize: CGFloat {
+        // Base size: 24, grows to 32 at max size
+        20 + (8 * layoutSizeMultiplier)
+    }
+    
+    private var centerIconSize: CGFloat {
+        // Base size: 48, grows to 64 at max size
+        40 + (16 * layoutSizeMultiplier)
+    }
+    
+    var body: some View {
+        ZStack {
+            // Background blur effect for outer ring area
+            Circle()
+                .fill(.ultraThinMaterial)
+                .frame(width: outerRadius * 2, height: outerRadius * 2)
+                .opacity(1.0 - settingsManager.settings.circularLayoutOuterRingTransparency)
+            
+            // Outer ring with sectors (B areas)
+            ringSectors
+            
+            // Inner center area (A area)
+            centerArea
+        }
+        .frame(width: ringSize, height: ringSize)
+        .onChange(of: currentIndex) { _ in
+            hoveredIndex = nil
+        }
+    }
+    
+    // MARK: - Ring Sectors (B Areas)
+    @ViewBuilder
+    private var ringSectors: some View {
+        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+            let angleRange = sectorAngleRange(for: index)
+            
+            Button(action: {
+                onItemSelect(index)
+            }) {
+                ZStack {
+                    // Sector background with blur effect
+                    ArcSector(
+                        startAngle: angleRange.start,
+                        endAngle: angleRange.end,
+                        innerRadius: innerRadius,
+                        outerRadius: outerRadius
+                    )
+                    .fill(.ultraThinMaterial)
+                    .opacity(settingsManager.settings.circularLayoutOuterRingTransparency)
+                    
+                    // Sector color overlay
+                    ArcSector(
+                        startAngle: angleRange.start,
+                        endAngle: angleRange.end,
+                        innerRadius: innerRadius,
+                        outerRadius: outerRadius
+                    )
+                    .foregroundColor(sectorBackgroundColor(for: index))
+                    
+                    // Sector content
+                    sectorContent(for: item, at: index)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .scaleEffect(index == hoveredIndex ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: hoveredIndex)
+            .onHover { isHovering in
+                hoveredIndex = isHovering ? index : nil
+            }
+        }
+    }
+    
+    // MARK: - Center Area (A Area)
+    @ViewBuilder
+    private var centerArea: some View {
+        if currentIndex < items.count {
+            VStack(spacing: 8) {
+                // Selected item content
+                if let window = items[currentIndex] as? WindowInfo {
+                    VStack(spacing: 4) {
+                        AppIconView(processID: window.processID)
+                            .frame(width: centerIconSize, height: centerIconSize)
+                        
+                        Text(window.projectName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        Text(window.appName)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                } else if let app = items[currentIndex] as? AppInfo {
+                    VStack(spacing: 4) {
+                        AppIconView(processID: app.processID)
+                            .frame(width: centerIconSize, height: centerIconSize)
+                        
+                        Text(app.appName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        if app.windowCount > 1 {
+                            Text(LocalizedStrings.multipleWindows(app.windowCount))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        } else {
+                            Text(LocalizedStrings.singleWindow)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
+            .frame(width: innerRadius * 1.8, height: innerRadius * 1.8)
+            .background(.ultraThinMaterial)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 2)
+            )
+            .shadow(color: .accentColor.opacity(0.2), radius: 8, x: 0, y: 0)
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func sectorAngleRange(for index: Int) -> (start: Angle, end: Angle) {
+        let totalItems = max(items.count, 1)
+        let anglePerItem = 360.0 / Double(totalItems)
+        
+        // Start from top (-90 degrees)
+        let startAngle = -90.0 + (Double(index) * anglePerItem)
+        let endAngle = startAngle + anglePerItem
+        
+        return (
+            start: Angle(degrees: startAngle),
+            end: Angle(degrees: endAngle)
+        )
+    }
+    
+    private func sectorBackgroundColor(for index: Int) -> Color {
+        if index == currentIndex {
+            return Color.accentColor.opacity(0.3)
+        } else if index == hoveredIndex {
+            return Color.accentColor.opacity(0.1)
+        } else {
+            return Color.gray.opacity(0.1)
+        }
+    }
+    
+    @ViewBuilder
+    private func sectorContent(for item: ItemType, at index: Int) -> some View {
+        let angleRange = sectorAngleRange(for: index)
+        let midAngle = (angleRange.start.degrees + angleRange.end.degrees) / 2
+        let radius = (innerRadius + outerRadius) / 2
+        
+        // Calculate position for content
+        let radians = midAngle * .pi / 180
+        let x = cos(radians) * radius
+        let y = sin(radians) * radius
+        
+        Group {
+            if let window = item as? WindowInfo {
+                VStack(spacing: 2) {
+                    AppIconView(processID: window.processID)
+                        .frame(width: iconSize, height: iconSize)
+                    
+                    Text(window.projectName)
+                        .font(.caption2)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: outerRadius - innerRadius - 10)
+                }
+            } else if let app = item as? AppInfo {
+                VStack(spacing: 2) {
+                    AppIconView(processID: app.processID)
+                        .frame(width: iconSize, height: iconSize)
+                    
+                    Text(app.appName)
+                        .font(.caption2)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: outerRadius - innerRadius - 10)
+                }
+            }
+        }
+        .offset(x: x, y: y)
+    }
+}
+

@@ -178,6 +178,21 @@ enum SwitcherHeaderStyle: String, CaseIterable, Codable {
     }
 }
 
+// MARK: - Switcher Layout Style
+enum SwitcherLayoutStyle: String, CaseIterable, Codable {
+    case list = "list"
+    case circular = "circular"
+    
+    var displayName: String {
+        switch self {
+        case .list:
+            return LocalizedStrings.layoutStyleList
+        case .circular:
+            return LocalizedStrings.layoutStyleCircular
+        }
+    }
+}
+
 // MARK: - App Title Configuration
 struct AppTitleConfig: Codable {
     let bundleId: String
@@ -220,6 +235,15 @@ struct AppSettings: Codable {
     
     // Switcher header style settings
     var switcherHeaderStyle: SwitcherHeaderStyle
+    
+    // Switcher layout style settings
+    var switcherLayoutStyle: SwitcherLayoutStyle
+    
+    // Circular layout size settings (1.0 = small, 2.0 = large)
+    var circularLayoutSize: Double
+    
+    // Circular layout outer ring transparency settings (0.1 = very transparent, 1.0 = opaque)
+    var circularLayoutOuterRingTransparency: Double
     
     static let `default` = AppSettings(
         modifierKey: .command,
@@ -271,7 +295,13 @@ struct AppSettings: Codable {
         // Switcher position default settings
         switcherVerticalPosition: 0.39,
         // Switcher header style default settings
-        switcherHeaderStyle: .default
+        switcherHeaderStyle: .default,
+        // Switcher layout style default settings
+        switcherLayoutStyle: .list,
+        // Circular layout size default settings
+        circularLayoutSize: 1.0,
+        // Circular layout outer ring transparency default settings
+        circularLayoutOuterRingTransparency: 0.5
     )
 }
 
@@ -380,6 +410,26 @@ class SettingsManager: ObservableObject {
     // MARK: - Switcher Header Style Settings
     func updateSwitcherHeaderStyle(_ style: SwitcherHeaderStyle) {
         settings.switcherHeaderStyle = style
+        saveSettings()
+    }
+    
+    // MARK: - Switcher Layout Style Settings
+    func updateSwitcherLayoutStyle(_ style: SwitcherLayoutStyle) {
+        settings.switcherLayoutStyle = style
+        saveSettings()
+    }
+    
+    // MARK: - Circular Layout Size Settings
+    func updateCircularLayoutSize(_ size: Double) {
+        let clampedSize = max(1.0, min(2.0, size))
+        settings.circularLayoutSize = clampedSize
+        saveSettings()
+    }
+    
+    // MARK: - Circular Layout Outer Ring Transparency Settings
+    func updateCircularLayoutOuterRingTransparency(_ transparency: Double) {
+        let clampedTransparency = max(0.1, min(1.0, transparency))
+        settings.circularLayoutOuterRingTransparency = clampedTransparency
         saveSettings()
     }
     

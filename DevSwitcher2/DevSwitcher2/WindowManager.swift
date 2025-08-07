@@ -20,6 +20,27 @@ struct WindowInfo {
     let axWindowIndex: Int  // AX window index
 }
 
+// MARK: - App Info Data Structure
+struct AppInfo {
+    let bundleId: String
+    let processID: pid_t
+    let appName: String
+    let firstWindow: WindowInfo?  // First window of this app
+    let windowCount: Int         // Total window count of this app
+    let isActive: Bool           // Whether it's the currently active app
+    let lastUsedTime: Date?      // Last used time
+    
+    init(bundleId: String, processID: pid_t, appName: String, windows: [WindowInfo], isActive: Bool = false, lastUsedTime: Date? = nil) {
+        self.bundleId = bundleId
+        self.processID = processID
+        self.appName = appName
+        self.firstWindow = windows.first
+        self.windowCount = windows.count
+        self.isActive = isActive
+        self.lastUsedTime = lastUsedTime
+    }
+}
+
 class WindowManager: ObservableObject {
     @Published var windows: [WindowInfo] = []
     @Published var isShowingSwitcher = false

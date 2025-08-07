@@ -218,6 +218,22 @@
 "header_style_default" = "Default";
 "header_style_simplified" = "Simplified";
 
+// MARK: - Switcher Layout Style Settings
+"switcher_layout_style_label" = "Layout Style";
+"switcher_layout_style_description" = "Choose how windows and apps are arranged in the switcher interface";
+"layout_style_list" = "List View";
+"layout_style_circular" = "Circular View";
+
+// MARK: - Circular Layout Size Settings
+"circular_layout_size_label" = "Circular Layout Size";
+"circular_layout_size_description" = "Adjust the size of the circular layout. Larger sizes provide more space for text display in the outer ring";
+
+// MARK: - Circular Layout Outer Ring Transparency Settings
+"circular_layout_outer_ring_transparency_label" = "Outer Ring Transparency";
+"circular_layout_outer_ring_transparency_description" = "Adjust the transparency of the outer ring area. Lower transparency provides stronger blur effect";
+"circular_layout_outer_ring_transparency_strong_blur" = "Strong Blur";
+"circular_layout_outer_ring_transparency_opaque" = "Opaque";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

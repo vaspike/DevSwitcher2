@@ -354,6 +354,22 @@ struct LocalizedStrings {
     static let headerStyleDefault = "header_style_default".localized
     static let headerStyleSimplified = "header_style_simplified".localized
     
+    // MARK: - Switcher Layout Style Settings
+    static let switcherLayoutStyleLabel = "switcher_layout_style_label".localized
+    static let switcherLayoutStyleDescription = "switcher_layout_style_description".localized
+    static let layoutStyleList = "layout_style_list".localized
+    static let layoutStyleCircular = "layout_style_circular".localized
+    
+    // MARK: - Circular Layout Size Settings
+    static let circularLayoutSizeLabel = "circular_layout_size_label".localized
+    static let circularLayoutSizeDescription = "circular_layout_size_description".localized
+    
+    // MARK: - Circular Layout Outer Ring Transparency Settings
+    static let circularLayoutOuterRingTransparencyLabel = "circular_layout_outer_ring_transparency_label".localized
+    static let circularLayoutOuterRingTransparencyDescription = "circular_layout_outer_ring_transparency_description".localized
+    static let circularLayoutOuterRingTransparencyStrongBlur = "circular_layout_outer_ring_transparency_strong_blur".localized
+    static let circularLayoutOuterRingTransparencyOpaque = "circular_layout_outer_ring_transparency_opaque".localized
+    
     // MARK: - About Page
     static let aboutApp = "about_app".localized
     static let version = "version".localized

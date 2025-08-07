@@ -218,6 +218,22 @@
 "header_style_default" = "默认";
 "header_style_simplified" = "简化";
 
+// MARK: - 切换器布局样式设置
+"switcher_layout_style_label" = "布局样式";
+"switcher_layout_style_description" = "选择窗口和应用在切换器界面中的排列方式";
+"layout_style_list" = "列表视图";
+"layout_style_circular" = "环形视图";
+
+// MARK: - 环形布局尺寸设置
+"circular_layout_size_label" = "环形布局尺寸";
+"circular_layout_size_description" = "调整环形布局的大小。更大的尺寸为外环的文字显示提供更多空间";
+
+// MARK: - 环形布局外环透明度设置
+"circular_layout_outer_ring_transparency_label" = "外环透明度";
+"circular_layout_outer_ring_transparency_description" = "调整外环区域的透明度。降低透明度时提供更强的毛玻璃效果";
+"circular_layout_outer_ring_transparency_strong_blur" = "强毛玻璃";
+"circular_layout_outer_ring_transparency_opaque" = "不透明";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

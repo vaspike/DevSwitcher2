@@ -1818,6 +1818,133 @@ struct SwitcherDisplaySettingsView: View {
                     .pickerStyle(SegmentedPickerStyle())
                     .frame(width: 200)
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                
+                Divider()
+                    .padding(.horizontal, -20)
+                
+                // Layout Style Setting
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.switcherLayoutStyleLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.switcherLayoutStyleDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Picker("", selection: Binding(
+                        get: { settingsManager.settings.switcherLayoutStyle },
+                        set: { newValue in
+                            settingsManager.updateSwitcherLayoutStyle(newValue)
+                        }
+                    )) {
+                        ForEach(SwitcherLayoutStyle.allCases, id: \.self) { style in
+                            Text(style.displayName).tag(style)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(width: 200)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                
+                // Circular Layout Size Setting (only show when circular layout is selected)
+                if settingsManager.settings.switcherLayoutStyle == .circular {
+                    Divider()
+                        .padding(.horizontal, -20)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(LocalizedStrings.circularLayoutSizeLabel)
+                                .font(.headline)
+                                .fontWeight(.medium)
+                            
+                            Text(LocalizedStrings.circularLayoutSizeDescription)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Slider(
+                                value: Binding(
+                                    get: { settingsManager.settings.circularLayoutSize },
+                                    set: { newValue in
+                                        settingsManager.updateCircularLayoutSize(newValue)
+                                    }
+                                ),
+                                in: 1.0...2.0,
+                                step: 0.1
+                            )
+                            .frame(width: 150)
+                            
+                            HStack {
+                                Text("Small")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("Large")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(width: 150)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    
+                    // Circular Layout Outer Ring Transparency Setting
+                    Divider()
+                        .padding(.horizontal, -20)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(LocalizedStrings.circularLayoutOuterRingTransparencyLabel)
+                                .font(.headline)
+                                .fontWeight(.medium)
+                            
+                            Text(LocalizedStrings.circularLayoutOuterRingTransparencyDescription)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Slider(
+                                value: Binding(
+                                    get: { settingsManager.settings.circularLayoutOuterRingTransparency },
+                                    set: { newValue in
+                                        settingsManager.updateCircularLayoutOuterRingTransparency(newValue)
+                                    }
+                                ),
+                                in: 0.1...1.0,
+                                step: 0.05
+                            )
+                            .frame(width: 150)
+                            
+                            HStack {
+                                Text(LocalizedStrings.circularLayoutOuterRingTransparencyStrongBlur)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(LocalizedStrings.circularLayoutOuterRingTransparencyOpaque)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(width: 150)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                }
             }
             .padding(20)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))

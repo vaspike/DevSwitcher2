@@ -1886,11 +1886,11 @@ struct SwitcherDisplaySettingsView: View {
                             .frame(width: 150)
                             
                             HStack {
-                                Text("Small")
+                                Text(LocalizedStrings.circularLayoutSizeSmall)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text("Large")
+                                Text(LocalizedStrings.circularLayoutSizeLarge)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -1900,50 +1900,61 @@ struct SwitcherDisplaySettingsView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     
-                    // Circular Layout Outer Ring Transparency Setting
+                                                        // Circular Layout Outer Ring Style Setting
                     Divider()
                         .padding(.horizontal, -20)
                     
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(LocalizedStrings.circularLayoutOuterRingTransparencyLabel)
+                            Text(LocalizedStrings.circularLayoutOuterRingStyleLabel)
                                 .font(.headline)
                                 .fontWeight(.medium)
                             
-                            Text(LocalizedStrings.circularLayoutOuterRingTransparencyDescription)
+                            Text(LocalizedStrings.circularLayoutOuterRingStyleDescription)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
                         
                         Spacer()
                         
-                        VStack(spacing: 4) {
-                            Slider(
-                                value: Binding(
-                                    get: { settingsManager.settings.circularLayoutOuterRingTransparency },
-                                    set: { newValue in
-                                        settingsManager.updateCircularLayoutOuterRingTransparency(newValue)
-                                    }
-                                ),
-                                in: 0.1...1.0,
-                                step: 0.05
-                            )
-                            .frame(width: 150)
-                            
-                            HStack {
-                                Text(LocalizedStrings.circularLayoutOuterRingTransparencyStrongBlur)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(LocalizedStrings.circularLayoutOuterRingTransparencyOpaque)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                        Picker("", selection: Binding(
+                            get: { settingsManager.settings.circularLayoutOuterRingStyle },
+                            set: { newValue in
+                                settingsManager.updateCircularLayoutOuterRingStyle(newValue)
                             }
-                            .frame(width: 150)
+                        )) {
+                            ForEach(CircularOuterRingStyle.allCases, id: \.self) { style in
+                                Text(style.displayName).tag(style)
+                            }
                         }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(width: 200)
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
+                
+                // Color Scheme Setting
+                Divider()
+                    .padding(.horizontal, -20)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.colorSchemeLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+                        
+                        Text(LocalizedStrings.colorSchemeDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    ColorSchemePickerView()
+                    
+                    // Preview section
+                    ColorSchemePreviewView()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
                 }
             }
             .padding(20)
@@ -2015,6 +2026,223 @@ struct VerticalPositionControl: View {
         .onChange(of: currentPosition) { newValue in
             textFieldValue = String(format: "%.2f", newValue)
         }
+    }
+}
+
+// MARK: - Color Scheme Picker View
+struct ColorSchemePickerView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+            ForEach(ColorScheme.allCases, id: \.self) { scheme in
+                ColorSchemeCardView(
+                    scheme: scheme,
+                    isSelected: settingsManager.settings.colorScheme == scheme
+                ) {
+                    settingsManager.updateColorScheme(scheme)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Color Scheme Preview View
+struct ColorSchemePreviewView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(LocalizedStrings.colorSchemePreviewTitle)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.secondary)
+            
+            HStack {
+                // Circular layout preview
+                VStack(spacing: 8) {
+                    Text(LocalizedStrings.colorSchemeCircularPreview)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    CircularPreviewView()
+                        .frame(width: 120, height: 120)
+                }
+                
+                Spacer()
+                
+                // List layout preview
+                VStack(spacing: 8) {
+                    Text(LocalizedStrings.colorSchemeListPreview)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    ListPreviewView()
+                        .frame(width: 200, height: 80)
+                }
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Circular Preview View
+struct CircularPreviewView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    var body: some View {
+        let colorScheme = settingsManager.settings.colorScheme
+        
+        ZStack {
+            // Background
+            Circle()
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    Circle()
+                        .fill(colorScheme.backgroundGradient)
+                        .opacity(0.2)
+                )
+            
+            // Outer ring sectors
+            ForEach(0..<6, id: \.self) { index in
+                let angle = Double(index) * 60.0
+                let isSelected = index == 0
+                
+                Path { path in
+                    let center = CGPoint(x: 60, y: 60)
+                    let outerRadius: CGFloat = 50
+                    let innerRadius: CGFloat = 30
+                    
+                    path.addArc(center: center, radius: outerRadius, startAngle: Angle(degrees: angle), endAngle: Angle(degrees: angle + 60), clockwise: false)
+                    path.addArc(center: center, radius: innerRadius, startAngle: Angle(degrees: angle + 60), endAngle: Angle(degrees: angle), clockwise: true)
+                    path.closeSubpath()
+                }
+                .fill(isSelected ? colorScheme.primaryColor.opacity(0.3) : colorScheme.secondaryColor.opacity(0.1))
+            }
+            
+            // Center area
+            Circle()
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    Circle()
+                        .fill(colorScheme.backgroundGradient)
+                        .opacity(0.3)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(colorScheme.glowColor, lineWidth: 1)
+                        .blur(radius: 2)
+                        .opacity(0.6)
+                )
+                .frame(width: 50, height: 50)
+                .shadow(color: colorScheme.primaryColor.opacity(0.3), radius: 4, x: 0, y: 2)
+        }
+    }
+}
+
+// MARK: - List Preview View
+struct ListPreviewView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
+    var body: some View {
+        let colorScheme = settingsManager.settings.colorScheme
+        
+        VStack(spacing: 2) {
+            // Header
+            HStack {
+                Circle()
+                    .fill(colorScheme.primaryColor)
+                    .frame(width: 8, height: 8)
+                Text(LocalizedStrings.colorSchemeSampleApp)
+                    .font(.caption2)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(colorScheme.primaryColor.opacity(0.15))
+            .cornerRadius(4)
+            
+            // Item
+            HStack {
+                Circle()
+                    .fill(colorScheme.secondaryColor)
+                    .frame(width: 6, height: 6)
+                Text(LocalizedStrings.colorSchemeSampleWindow)
+                    .font(.caption2)
+                    .foregroundColor(.primary)
+                Spacer()
+                Circle()
+                    .fill(colorScheme.accentColor)
+                    .frame(width: 6, height: 6)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(colorScheme.primaryColor.opacity(0.05))
+            .cornerRadius(4)
+        }
+        .padding(4)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+    }
+}
+
+// MARK: - Color Scheme Card View
+struct ColorSchemeCardView: View {
+    let scheme: ColorScheme
+    let isSelected: Bool
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 8) {
+                // Color preview circle with enhanced design
+                ZStack {
+                    // Background gradient
+                    Circle()
+                        .fill(scheme.backgroundGradient)
+                        .frame(width: 40, height: 40)
+                    
+                    // Primary color ring
+                    Circle()
+                        .stroke(scheme.primaryColor, lineWidth: 2)
+                        .frame(width: 40, height: 40)
+                        .opacity(0.8)
+                    
+                    // Secondary color accent
+                    Circle()
+                        .fill(scheme.secondaryColor)
+                        .frame(width: 20, height: 20)
+                        .opacity(0.6)
+                    
+                    // Accent color center
+                    Circle()
+                        .fill(scheme.accentColor)
+                        .frame(width: 12, height: 12)
+                        .opacity(0.9)
+                }
+                
+                // Scheme name
+                Text(scheme.displayName)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? scheme.primaryColor.opacity(0.1) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isSelected ? scheme.primaryColor : Color.gray.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
 

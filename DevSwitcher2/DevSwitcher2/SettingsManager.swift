@@ -9,6 +9,7 @@ import Foundation
 import AppKit
 import Carbon
 import ServiceManagement
+import SwiftUI // Added for Color and LinearGradient
 
 // MARK: - Modifier Key Enum
 enum ModifierKey: String, CaseIterable, Codable {
@@ -193,6 +194,261 @@ enum SwitcherLayoutStyle: String, CaseIterable, Codable {
     }
 }
 
+// MARK: - Circular Outer Ring Style
+enum CircularOuterRingStyle: String, CaseIterable, Codable {
+    case transparent = "transparent"
+    case frosted = "frosted"
+    
+    var displayName: String {
+        switch self {
+        case .transparent:
+            return LocalizedStrings.circularLayoutOuterRingStyleTransparent
+        case .frosted:
+            return LocalizedStrings.circularLayoutOuterRingStyleFrosted
+        }
+    }
+    
+    var opacity: Double {
+        switch self {
+        case .transparent:
+            return 0.1
+        case .frosted:
+            return 1.0
+        }
+    }
+}
+
+// MARK: - Color Scheme Enum
+enum ColorScheme: String, CaseIterable, Codable {
+    case system = "system"
+    case cyberpunk = "cyberpunk"
+    case sunset = "sunset"
+    case forest = "forest"
+    case ocean = "ocean"
+    case rose = "rose"
+    case graphite = "graphite"
+    case indigo = "indigo"
+    case aurora = "aurora"
+    case midnight = "midnight"
+    
+    var displayName: String {
+        switch self {
+        case .system:
+            return LocalizedStrings.colorSchemeSystem
+        case .cyberpunk:
+            return LocalizedStrings.colorSchemeCyberpunk
+        case .sunset:
+            return LocalizedStrings.colorSchemeSunset
+        case .forest:
+            return LocalizedStrings.colorSchemeForest
+        case .ocean:
+            return LocalizedStrings.colorSchemeOcean
+        case .rose:
+            return LocalizedStrings.colorSchemeRose
+        case .graphite:
+            return LocalizedStrings.colorSchemeGraphite
+        case .indigo:
+            return LocalizedStrings.colorSchemeIndigo
+        case .aurora:
+            return LocalizedStrings.colorSchemeAurora
+        case .midnight:
+            return LocalizedStrings.colorSchemeMidnight
+        }
+    }
+    
+    var primaryColor: Color {
+        switch self {
+        case .system:
+            return .accentColor
+        case .cyberpunk:
+            return Color(red: 0.0, green: 1.0, blue: 0.8) // 青色
+        case .sunset:
+            return Color(red: 1.0, green: 0.4, blue: 0.2) // 橙红色
+        case .forest:
+            return Color(red: 0.2, green: 0.8, blue: 0.4) // 绿色
+        case .ocean:
+            return Color(red: 0.2, green: 0.6, blue: 1.0) // 蓝色
+        case .rose:
+            return Color(red: 1.0, green: 0.2, blue: 0.6) // 粉红色
+        case .graphite:
+            return Color(red: 0.4, green: 0.4, blue: 0.5) // 石墨色
+        case .indigo:
+            return Color(red: 0.4, green: 0.2, blue: 0.8) // 靛蓝色
+        case .aurora:
+            return Color(red: 0.0, green: 0.8, blue: 0.6) // 极光绿
+        case .midnight:
+            return Color(red: 0.6, green: 0.2, blue: 0.8) // 午夜紫
+        }
+    }
+    
+    var secondaryColor: Color {
+        switch self {
+        case .system:
+            return .accentColor.opacity(0.7)
+        case .cyberpunk:
+            return Color(red: 1.0, green: 0.0, blue: 0.8) // 洋红色
+        case .sunset:
+            return Color(red: 1.0, green: 0.8, blue: 0.0) // 金黄色
+        case .forest:
+            return Color(red: 0.0, green: 0.6, blue: 0.3) // 深绿色
+        case .ocean:
+            return Color(red: 0.0, green: 0.8, blue: 0.8) // 青色
+        case .rose:
+            return Color(red: 0.8, green: 0.0, blue: 0.4) // 深粉红色
+        case .graphite:
+            return Color(red: 0.6, green: 0.6, blue: 0.7) // 浅石墨色
+        case .indigo:
+            return Color(red: 0.2, green: 0.0, blue: 0.6) // 深靛蓝色
+        case .aurora:
+            return Color(red: 0.0, green: 0.4, blue: 0.8) // 深蓝色
+        case .midnight:
+            return Color(red: 0.4, green: 0.0, blue: 0.6) // 深紫色
+        }
+    }
+    
+    var accentColor: Color {
+        switch self {
+        case .system:
+            return .accentColor
+        case .cyberpunk:
+            return Color(red: 0.0, green: 1.0, blue: 1.0) // 亮青色
+        case .sunset:
+            return Color(red: 1.0, green: 0.6, blue: 0.0) // 橙色
+        case .forest:
+            return Color(red: 0.4, green: 1.0, blue: 0.6) // 亮绿色
+        case .ocean:
+            return Color(red: 0.4, green: 0.8, blue: 1.0) // 天蓝色
+        case .rose:
+            return Color(red: 1.0, green: 0.4, blue: 0.8) // 亮粉红色
+        case .graphite:
+            return Color(red: 0.8, green: 0.8, blue: 0.9) // 亮石墨色
+        case .indigo:
+            return Color(red: 0.6, green: 0.4, blue: 1.0) // 亮靛蓝色
+        case .aurora:
+            return Color(red: 0.2, green: 1.0, blue: 0.8) // 亮极光绿
+        case .midnight:
+            return Color(red: 0.8, green: 0.4, blue: 1.0) // 亮午夜紫
+        }
+    }
+    
+    var backgroundGradient: LinearGradient {
+        switch self {
+        case .system:
+            return LinearGradient(
+                colors: [Color.accentColor.opacity(0.1), Color.accentColor.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .cyberpunk:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.0, green: 1.0, blue: 0.8).opacity(0.15),
+                    Color(red: 1.0, green: 0.0, blue: 0.8).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .sunset:
+            return LinearGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.4, blue: 0.2).opacity(0.15),
+                    Color(red: 1.0, green: 0.8, blue: 0.0).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .forest:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.2, green: 0.8, blue: 0.4).opacity(0.15),
+                    Color(red: 0.0, green: 0.6, blue: 0.3).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .ocean:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.2, green: 0.6, blue: 1.0).opacity(0.15),
+                    Color(red: 0.0, green: 0.8, blue: 0.8).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .rose:
+            return LinearGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.2, blue: 0.6).opacity(0.15),
+                    Color(red: 0.8, green: 0.0, blue: 0.4).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .graphite:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.4, green: 0.4, blue: 0.5).opacity(0.15),
+                    Color(red: 0.6, green: 0.6, blue: 0.7).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .indigo:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.4, green: 0.2, blue: 0.8).opacity(0.15),
+                    Color(red: 0.2, green: 0.0, blue: 0.6).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .aurora:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.0, green: 0.8, blue: 0.6).opacity(0.15),
+                    Color(red: 0.0, green: 0.4, blue: 0.8).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .midnight:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.6, green: 0.2, blue: 0.8).opacity(0.15),
+                    Color(red: 0.4, green: 0.0, blue: 0.6).opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+    
+    var glowColor: Color {
+        switch self {
+        case .system:
+            return .accentColor.opacity(0.3)
+        case .cyberpunk:
+            return Color(red: 0.0, green: 1.0, blue: 0.8).opacity(0.4)
+        case .sunset:
+            return Color(red: 1.0, green: 0.4, blue: 0.2).opacity(0.4)
+        case .forest:
+            return Color(red: 0.2, green: 0.8, blue: 0.4).opacity(0.4)
+        case .ocean:
+            return Color(red: 0.2, green: 0.6, blue: 1.0).opacity(0.4)
+        case .rose:
+            return Color(red: 1.0, green: 0.2, blue: 0.6).opacity(0.4)
+        case .graphite:
+            return Color(red: 0.4, green: 0.4, blue: 0.5).opacity(0.4)
+        case .indigo:
+            return Color(red: 0.4, green: 0.2, blue: 0.8).opacity(0.4)
+        case .aurora:
+            return Color(red: 0.0, green: 0.8, blue: 0.6).opacity(0.4)
+        case .midnight:
+            return Color(red: 0.6, green: 0.2, blue: 0.8).opacity(0.4)
+        }
+    }
+}
+
 // MARK: - App Title Configuration
 struct AppTitleConfig: Codable {
     let bundleId: String
@@ -242,8 +498,11 @@ struct AppSettings: Codable {
     // Circular layout size settings (1.0 = small, 2.0 = large)
     var circularLayoutSize: Double
     
-    // Circular layout outer ring transparency settings (0.1 = very transparent, 1.0 = opaque)
-    var circularLayoutOuterRingTransparency: Double
+    // Circular layout outer ring style settings
+    var circularLayoutOuterRingStyle: CircularOuterRingStyle
+    
+    // Color scheme settings
+    var colorScheme: ColorScheme
     
     static let `default` = AppSettings(
         modifierKey: .command,
@@ -300,8 +559,10 @@ struct AppSettings: Codable {
         switcherLayoutStyle: .list,
         // Circular layout size default settings
         circularLayoutSize: 1.0,
-        // Circular layout outer ring transparency default settings
-        circularLayoutOuterRingTransparency: 0.5
+        // Circular layout outer ring style default settings
+        circularLayoutOuterRingStyle: .frosted,
+        // Color scheme default settings
+        colorScheme: .system
     )
 }
 
@@ -426,10 +687,15 @@ class SettingsManager: ObservableObject {
         saveSettings()
     }
     
-    // MARK: - Circular Layout Outer Ring Transparency Settings
-    func updateCircularLayoutOuterRingTransparency(_ transparency: Double) {
-        let clampedTransparency = max(0.1, min(1.0, transparency))
-        settings.circularLayoutOuterRingTransparency = clampedTransparency
+    // MARK: - Circular Layout Outer Ring Style Settings
+    func updateCircularLayoutOuterRingStyle(_ style: CircularOuterRingStyle) {
+        settings.circularLayoutOuterRingStyle = style
+        saveSettings()
+    }
+    
+    // MARK: - Color Scheme Settings
+    func updateColorScheme(_ scheme: ColorScheme) {
+        settings.colorScheme = scheme
         saveSettings()
     }
     

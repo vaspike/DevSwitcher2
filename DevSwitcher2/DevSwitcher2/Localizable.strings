@@ -227,12 +227,16 @@
 // MARK: - Circular Layout Size Settings
 "circular_layout_size_label" = "Circular Layout Size";
 "circular_layout_size_description" = "Adjust the size of the circular layout. Larger sizes provide more space for text display in the outer ring";
+"circular_layout_size_small" = "Small";
+"circular_layout_size_large" = "Large";
 
 // MARK: - Circular Layout Outer Ring Transparency Settings
 "circular_layout_outer_ring_transparency_label" = "Outer Ring Transparency";
 "circular_layout_outer_ring_transparency_description" = "Adjust the transparency of the outer ring area. Lower transparency provides stronger blur effect";
-"circular_layout_outer_ring_transparency_strong_blur" = "Strong Blur";
-"circular_layout_outer_ring_transparency_opaque" = "Opaque";
+"circular_layout_outer_ring_style_label" = "Outer Ring Style";
+"circular_layout_outer_ring_style_description" = "Choose the visual style for the outer ring area";
+"circular_layout_outer_ring_style_transparent" = "Transparent";
+"circular_layout_outer_ring_style_frosted" = "Frosted Glass";
 
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
@@ -291,4 +295,24 @@
 "buy_me_coffee" = "Buy Me a Coffee";
 "support_development" = "Support Development";
 "coffee_description" = "If you find DevSwitcher2 helpful, consider buying me a coffee to support continued development!";
-"copyright" = "© 2025 River. All rights reserved."; 
+"copyright" = "© 2025 River. All rights reserved.";
+
+// MARK: - Color Scheme Settings
+"color_scheme_section_title" = "Color Scheme";
+"color_scheme_label" = "Color Scheme";
+"color_scheme_description" = "Choose a beautiful color scheme for the switcher interface";
+"color_scheme_system" = "System Default";
+"color_scheme_cyberpunk" = "Cyberpunk";
+"color_scheme_sunset" = "Sunset";
+"color_scheme_forest" = "Forest";
+"color_scheme_ocean" = "Ocean";
+"color_scheme_rose" = "Rose";
+"color_scheme_graphite" = "Graphite";
+"color_scheme_indigo" = "Indigo";
+"color_scheme_aurora" = "Aurora";
+"color_scheme_midnight" = "Midnight";
+"color_scheme_preview_title" = "Preview";
+"color_scheme_circular_preview" = "Circular View";
+"color_scheme_list_preview" = "List View";
+"color_scheme_sample_app" = "Sample App";
+"color_scheme_sample_window" = "Window Title"; 

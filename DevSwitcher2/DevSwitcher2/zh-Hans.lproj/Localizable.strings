@@ -227,12 +227,16 @@
 // MARK: - 环形布局尺寸设置
 "circular_layout_size_label" = "环形布局尺寸";
 "circular_layout_size_description" = "调整环形布局的大小。更大的尺寸为外环的文字显示提供更多空间";
+"circular_layout_size_small" = "小";
+"circular_layout_size_large" = "大";
 
 // MARK: - 环形布局外环透明度设置
 "circular_layout_outer_ring_transparency_label" = "外环透明度";
 "circular_layout_outer_ring_transparency_description" = "调整外环区域的透明度。降低透明度时提供更强的毛玻璃效果";
-"circular_layout_outer_ring_transparency_strong_blur" = "强毛玻璃";
-"circular_layout_outer_ring_transparency_opaque" = "不透明";
+"circular_layout_outer_ring_style_label" = "外环样式";
+"circular_layout_outer_ring_style_description" = "选择外环区域的视觉样式";
+"circular_layout_outer_ring_style_transparent" = "透明";
+"circular_layout_outer_ring_style_frosted" = "毛玻璃";
 
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
@@ -291,4 +295,24 @@
 "buy_me_coffee" = "请我喝咖啡";
 "support_development" = "支持开发";
 "coffee_description" = "如果您觉得 DevSwitcher2 很有用，请考虑请我喝杯咖啡来支持持续开发！";
-"copyright" = "© 2025 River. 保留所有权利。"; 
+"copyright" = "© 2025 River. 保留所有权利。";
+
+// MARK: - 配色方案设置
+"color_scheme_section_title" = "配色方案";
+"color_scheme_label" = "配色方案";
+"color_scheme_description" = "为切换器界面选择美观的配色方案";
+"color_scheme_system" = "系统默认";
+"color_scheme_cyberpunk" = "赛博朋克";
+"color_scheme_sunset" = "日落";
+"color_scheme_forest" = "森林";
+"color_scheme_ocean" = "海洋";
+"color_scheme_rose" = "玫瑰";
+"color_scheme_graphite" = "石墨";
+"color_scheme_indigo" = "靛蓝";
+"color_scheme_aurora" = "极光";
+"color_scheme_midnight" = "午夜";
+"color_scheme_preview_title" = "预览效果";
+"color_scheme_circular_preview" = "环形视图";
+"color_scheme_list_preview" = "列表视图";
+"color_scheme_sample_app" = "示例应用";
+"color_scheme_sample_window" = "窗口标题"; 

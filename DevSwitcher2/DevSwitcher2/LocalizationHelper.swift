@@ -363,12 +363,36 @@ struct LocalizedStrings {
     // MARK: - Circular Layout Size Settings
     static let circularLayoutSizeLabel = "circular_layout_size_label".localized
     static let circularLayoutSizeDescription = "circular_layout_size_description".localized
+    static let circularLayoutSizeSmall = "circular_layout_size_small".localized
+    static let circularLayoutSizeLarge = "circular_layout_size_large".localized
     
     // MARK: - Circular Layout Outer Ring Transparency Settings
     static let circularLayoutOuterRingTransparencyLabel = "circular_layout_outer_ring_transparency_label".localized
     static let circularLayoutOuterRingTransparencyDescription = "circular_layout_outer_ring_transparency_description".localized
-    static let circularLayoutOuterRingTransparencyStrongBlur = "circular_layout_outer_ring_transparency_strong_blur".localized
-    static let circularLayoutOuterRingTransparencyOpaque = "circular_layout_outer_ring_transparency_opaque".localized
+    static let circularLayoutOuterRingStyleLabel = "circular_layout_outer_ring_style_label".localized
+    static let circularLayoutOuterRingStyleDescription = "circular_layout_outer_ring_style_description".localized
+    static let circularLayoutOuterRingStyleTransparent = "circular_layout_outer_ring_style_transparent".localized
+    static let circularLayoutOuterRingStyleFrosted = "circular_layout_outer_ring_style_frosted".localized
+    
+    // MARK: - Color Scheme Settings
+    static let colorSchemeSectionTitle = "color_scheme_section_title".localized
+    static let colorSchemeLabel = "color_scheme_label".localized
+    static let colorSchemeDescription = "color_scheme_description".localized
+    static let colorSchemeSystem = "color_scheme_system".localized
+    static let colorSchemeCyberpunk = "color_scheme_cyberpunk".localized
+    static let colorSchemeSunset = "color_scheme_sunset".localized
+    static let colorSchemeForest = "color_scheme_forest".localized
+    static let colorSchemeOcean = "color_scheme_ocean".localized
+    static let colorSchemeRose = "color_scheme_rose".localized
+    static let colorSchemeGraphite = "color_scheme_graphite".localized
+    static let colorSchemeIndigo = "color_scheme_indigo".localized
+    static let colorSchemeAurora = "color_scheme_aurora".localized
+    static let colorSchemeMidnight = "color_scheme_midnight".localized
+    static let colorSchemePreviewTitle = "color_scheme_preview_title".localized
+    static let colorSchemeCircularPreview = "color_scheme_circular_preview".localized
+    static let colorSchemeListPreview = "color_scheme_list_preview".localized
+    static let colorSchemeSampleApp = "color_scheme_sample_app".localized
+    static let colorSchemeSampleWindow = "color_scheme_sample_window".localized
     
     // MARK: - About Page
     static let aboutApp = "about_app".localized

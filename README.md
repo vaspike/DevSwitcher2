@@ -16,6 +16,12 @@ A modern menu bar application that enhances window and application switching exp
 
 ## 📸 Preview
 
+### v2.5.1-beta
+
+![1010X1010/Snipaste_2025-08-11_13-49-54.png](https://tc-new.z.wiki/autoupload/f/0pFpQ-sjfTdei2ti7U8wGpmesdO83n0jJRcmVXjsIsc/20250811/7bj5/1010X1010/Snipaste_2025-08-11_13-49-54.png)
+
+---
+
 ![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
 
 ![1448X1002/1.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/2ifI/1448X1002/1.png)

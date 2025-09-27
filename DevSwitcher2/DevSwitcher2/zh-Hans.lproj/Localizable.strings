@@ -277,7 +277,7 @@
 
 // MARK: - 关于页面
 "about_app" = "关于 DevSwitcher2";
-"version" = "版本 2.5.1";
+"version" = "版本 2.6.1";
 "app_description" = "DevSwitcher2 是一款现代化的 macOS 生产力工具，通过双模式切换功能增强您的窗口和应用切换体验。";
 "main_features" = "主要功能:";
 "feature_1" = "• DS2 模式：增强的同应用窗口切换";

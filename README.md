@@ -16,6 +16,14 @@ A modern menu bar application that enhances window and application switching exp
 
 ## 📸 Preview
 
+### v2.5.1-beta (In macOS 26)
+
+<img width="505" height="505" alt="image" src="https://github.com/user-attachments/assets/8bef6aca-3c01-4de5-bfd4-c4da589af18a" />
+
+<img width="513" height="514" alt="image" src="https://github.com/user-attachments/assets/4639e4f0-011f-4bc4-9482-8121a034a804" />
+
+---
+
 ![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
 
 ![1448X1002/1.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/2ifI/1448X1002/1.png)

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.6-blue?style=for-the-badge)
+![DevSwitcher2 Logo](https://img.shields.io/badge/DevSwitcher2-2.7-blue?style=for-the-badge)
 [![macOS](https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/vaspike/devswitcher2/total?style=for-the-badge&color=orange)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)

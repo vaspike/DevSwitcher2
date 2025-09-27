@@ -98,6 +98,134 @@ class WindowManager: ObservableObject {
     // Settings manager
     private let settingsManager = SettingsManager.shared
     
+    // MARK: - Steam Application Support
+    //
+    // Steam applications (including Steam games) often create windows with non-zero layer values,
+    // which causes them to be filtered out by standard window detection logic that only accepts layer 0.
+    // This implementation provides special handling for Steam applications by:
+    // 1. Detecting Steam apps by bundle ID patterns
+    // 2. Allowing non-zero layers (typically 1-10) for Steam applications
+    // 3. Providing enhanced logging for Steam window detection
+    //
+    // Based on research from the alt-tab-macos project and community reports of Steam window issues.
+    
+    /// Check if an application is Steam or a Steam game
+    /// Steam games often have non-zero window layers which cause them to be filtered out
+    private func isSteamApplication(_ bundleId: String?) -> Bool {
+        guard let bundleId = bundleId else { return false }
+        
+        // Steam client itself
+        if bundleId == "com.valvesoftware.steam" {
+            return true
+        }
+        
+        // Steam games - common patterns based on alt-tab-macos implementation
+        // Steam games typically have bundle IDs starting with "com.valvesoftware."
+        // or contain "steamapps" in their bundle ID
+        if bundleId.hasPrefix("com.valvesoftware.") || 
+           bundleId.contains("steamapps") ||
+           bundleId.contains("steam") {
+            return true
+        }
+        
+        return false
+    }
+    
+    /// Check if a window layer should be considered valid, with special handling for Steam apps
+    private func isValidWindowLayer(_ layer: Int, forBundleId bundleId: String?) -> Bool {
+        // Standard case: layer 0 (normal windows)
+        if layer == 0 {
+            return true
+        }
+        
+        // Special case for Steam applications: allow certain non-zero layers
+        if isSteamApplication(bundleId) {
+            // Allow layers typically used by Steam games (based on community research)
+            // Steam games and the Steam client may place windows on higher layers
+            return layer >= 0 && layer <= 100
+        }
+        
+        return false
+    }
+
+    /// Resolve the primary app (with regular activation policy) that should own a window
+    private func resolvePrimaryApp(
+        for windowProcessID: pid_t,
+        ownerName: String?,
+        runningAppMap: [pid_t: NSRunningApplication],
+        bundlePrimaryApp: [String: NSRunningApplication]
+    ) -> NSRunningApplication? {
+        var windowRunningApp: NSRunningApplication?
+        if let cachedApp = runningAppMap[windowProcessID] {
+            windowRunningApp = cachedApp
+        } else {
+            windowRunningApp = NSRunningApplication(processIdentifier: windowProcessID)
+        }
+        
+        if let app = windowRunningApp {
+            if app.activationPolicy == .regular {
+                return app
+            }
+            if let bundleId = app.bundleIdentifier, let primaryApp = bundlePrimaryApp[bundleId] {
+                return primaryApp
+            }
+        }
+        
+        if let bundleId = windowRunningApp?.bundleIdentifier, let primaryApp = bundlePrimaryApp[bundleId] {
+            return primaryApp
+        }
+        
+        if let ownerName = ownerName?.lowercased(), ownerName.contains("steam"),
+           let steamApp = bundlePrimaryApp.first(where: { isSteamApplication($0.key) })?.value {
+            return steamApp
+        }
+        
+        return nil
+    }
+    
+    /// Determine whether a window belongs to the specified target application
+    private func windowBelongsToApp(
+        windowProcessID: pid_t,
+        ownerName: String?,
+        targetApp: NSRunningApplication,
+        runningAppMap: [pid_t: NSRunningApplication],
+        bundlePrimaryApp: [String: NSRunningApplication]
+    ) -> Bool {
+        if windowProcessID == targetApp.processIdentifier {
+            return true
+        }
+        
+        if let targetBundle = targetApp.bundleIdentifier,
+           let windowApp = runningAppMap[windowProcessID],
+           windowApp.bundleIdentifier == targetBundle {
+            return true
+        }
+        
+        if let resolvedApp = resolvePrimaryApp(
+            for: windowProcessID,
+            ownerName: ownerName,
+            runningAppMap: runningAppMap,
+            bundlePrimaryApp: bundlePrimaryApp
+        ) {
+            if resolvedApp.processIdentifier == targetApp.processIdentifier {
+                return true
+            }
+            if let targetBundle = targetApp.bundleIdentifier,
+               let resolvedBundle = resolvedApp.bundleIdentifier,
+               resolvedBundle == targetBundle {
+                return true
+            }
+        }
+        
+        if isSteamApplication(targetApp.bundleIdentifier) {
+            if let ownerName = ownerName?.lowercased(), ownerName.contains("steam") {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
     init() {
         setupSwitcherWindow()
     }
@@ -392,12 +520,12 @@ class WindowManager: ObservableObject {
         NSApp.activateCompat()
         
         // 3. 延迟打印日志，以获取渲染后的真实缓存大小
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self, self.isShowingSwitcher else { return }
-            let cacheInfo = AppIconCache.shared.getCacheInfo()
-            let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
-            Logger.log("📊 DS2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
-        }
+        // DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        //     guard let self = self, self.isShowingSwitcher else { return }
+        //     let cacheInfo = AppIconCache.shared.getCacheInfo()
+        //     let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
+        //     Logger.log("📊 DS2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
+        // }
         
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
@@ -448,12 +576,12 @@ class WindowManager: ObservableObject {
         NSApp.activateCompat()
         
         // 3. 延迟打印日志，以获取渲染后的真实缓存大小
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self, self.isShowingAppSwitcher else { return }
-            let cacheInfo = AppIconCache.shared.getCacheInfo()
-            let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
-            Logger.log("📊 CT2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
-        }
+        // DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        //     guard let self = self, self.isShowingAppSwitcher else { return }
+        //     let cacheInfo = AppIconCache.shared.getCacheInfo()
+        //     let formattedSize = ByteCountFormatter.string(fromByteCount: Int64(cacheInfo.dataSize), countStyle: .memory)
+        //     Logger.log("📊 CT2 icon cache status (after rendering): \(cacheInfo.count) / \(cacheInfo.maxSize), total size: \(formattedSize)")
+        // }
         
         // 使用统一的事件处理机制
         setupUnifiedEventHandling()
@@ -543,6 +671,13 @@ class WindowManager: ObservableObject {
         // 打印所有运行的应用
         Logger.log("\n=== Debug Information Start ===")
         let allApps = NSWorkspace.shared.runningApplications
+        let runningAppMap = Dictionary(uniqueKeysWithValues: allApps.map { ($0.processIdentifier, $0) })
+        let bundlePrimaryApp = allApps.reduce(into: [String: NSRunningApplication]()) { partialResult, app in
+            guard app.activationPolicy == .regular, let bundleId = app.bundleIdentifier else { return }
+            if partialResult[bundleId] == nil {
+                partialResult[bundleId] = app
+            }
+        }
         // Logger.log("All running applications:")
         // for app in allApps {
         //     let isActive = app.isActive ? " [ACTIVE]" : ""
@@ -573,16 +708,29 @@ class WindowManager: ObservableObject {
                 guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
                       let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool,
                       let layer = windowInfo[kCGWindowLayer as String] as? Int else { continue }
-                
-                // 过滤条件：在屏幕上、层级为0（正常窗口）、不是自己的进程
-                if isOnScreen && layer == 0 {
-                    if let app = allApps.first(where: { $0.processIdentifier == processID }),
-                       app.bundleIdentifier != Bundle.main.bundleIdentifier {
-                        topWindowApp = app
-                        Logger.log("🔍 Found application of frontmost window: \(app.localizedName ?? "Unknown") (PID: \(processID))")
-                        break
-                    }
+                let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
+
+                if !isOnScreen {
+                    continue
                 }
+
+                guard let resolvedApp = resolvePrimaryApp(
+                    for: processID,
+                    ownerName: ownerName,
+                    runningAppMap: runningAppMap,
+                    bundlePrimaryApp: bundlePrimaryApp
+                ),
+                resolvedApp.bundleIdentifier != Bundle.main.bundleIdentifier,
+                isValidWindowLayer(layer, forBundleId: resolvedApp.bundleIdentifier) else {
+                    continue
+                }
+
+                topWindowApp = resolvedApp
+                Logger.log("🔍 Found application of frontmost window: \(resolvedApp.localizedName ?? "Unknown") (PID: \(resolvedApp.processIdentifier), Layer: \(layer))")
+                if isSteamApplication(resolvedApp.bundleIdentifier) {
+                    Logger.log("🎮 Detected Steam application with layer \(layer)")
+                }
+                break
             }
             
             guard let foundApp = topWindowApp else {
@@ -597,38 +745,23 @@ class WindowManager: ObservableObject {
         Logger.log("   Bundle ID: \(targetApp.bundleIdentifier ?? "Unknown")")
         Logger.log("\n📋 System found \(windowList.count) windows in total")
         
-        // // 打印所有窗口信息
-        // Logger.log("\n🔍 All window details:")
-        // for (index, windowInfo) in windowList.enumerated() {
-        //     let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t ?? -1
-        //     let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
-        //     let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
-        //     let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
-        //     let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
-        //     let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
-        //     let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
-        //     let ownerName = windowInfo[kCGWindowOwnerName as String] as? String ?? "Unknown"
-        //     let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
-            
-        //     let isTarget = processID == targetApp.processIdentifier ? " ⭐ [TARGET]" : ""
-            
-        //     Logger.log("  [\(index)] PID:\(processID) | Layer:\(layer) | Size:\(width)x\(height) | OnScreen:\(isOnScreen)")
-        //     Logger.log("       Owner: \(ownerName)")
-        //     Logger.log("       Title: '\(windowTitle)'\(isTarget)")
-        //     Logger.log("       ID: \(windowID)")
-        //     Logger.log("")
-        // }
-        
-                 // 筛选目标应用的窗口
-         var candidateWindows: [[String: Any]] = []
-         var validWindows: [[String: Any]] = []
-         var windowCounter = 1
-         var validWindowIndex = 0  // 跟踪有效窗口的索引
-        
+        // 筛选目标应用的窗口
+        var candidateWindows: [[String: Any]] = []
+        var validWindows: [[String: Any]] = []
+        var windowCounter = 1
+        var windowIndexByProcess: [pid_t: Int] = [:]
+
         for windowInfo in windowList {
             guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t else { continue }
-            
-            if processID == targetApp.processIdentifier {
+            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
+
+            if windowBelongsToApp(
+                windowProcessID: processID,
+                ownerName: ownerName,
+                targetApp: targetApp,
+                runningAppMap: runningAppMap,
+                bundlePrimaryApp: bundlePrimaryApp
+            ) {
                 candidateWindows.append(windowInfo)
                 
                 let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
@@ -637,51 +770,51 @@ class WindowManager: ObservableObject {
                 let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
                 
                 Logger.log("🔎 Checking target application window:")
+                Logger.log("   Owner: \(ownerName ?? "Unknown") (PID: \(processID))")
                 Logger.log("   Title: '\(windowTitle)'")
                 Logger.log("   Layer: \(layer)")
                 Logger.log("   ID: \(windowID)")
                 Logger.log("   OnScreen: \(isOnScreen)")
                 
-                                 // 检查过滤条件 - 允许空标题
-                 let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
-                 let hasValidLayer = layer >= 0
-                 let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
-                 let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
-                 let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
-                 let hasReasonableSize = width > 100 && height > 100 // 过滤掉太小的窗口
-                 
-                 Logger.log("   Filter check: ID=\(hasValidID), Layer=\(hasValidLayer), Size=\(width)x\(height), ReasonableSize=\(hasReasonableSize)")
-                 
-                 if hasValidID && hasValidLayer && hasReasonableSize {
+                let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
+                let hasValidLayer = isValidWindowLayer(layer, forBundleId: targetApp.bundleIdentifier)
+                let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
+                let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
+                let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
+                let hasReasonableSize = width > 100 && height > 100 // 过滤掉太小的窗口
+                
+                Logger.log("   Filter check: ID=\(hasValidID), Layer=\(hasValidLayer), Size=\(width)x\(height), ReasonableSize=\(hasReasonableSize)")
+                
+                if hasValidID && hasValidLayer && hasReasonableSize {
                     validWindows.append(windowInfo)
+
+                    let currentIndex = windowIndexByProcess[processID] ?? 0
+                    windowIndexByProcess[processID] = currentIndex + 1
                     
-                                         // 通过AX API获取窗口标题和AX元素
-                     let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: validWindowIndex)
-                     
-                     let displayTitle: String
-                     let projectName: String
-                     
-                     if !axTitle.isEmpty {
-                         displayTitle = axTitle
-                         projectName = settingsManager.extractProjectName(
-                             from: axTitle, 
-                             bundleId: targetApp.bundleIdentifier ?? "", 
-                             appName: targetApp.localizedName ?? ""
-                         )
-                     } else if !windowTitle.isEmpty {
-                         displayTitle = windowTitle
-                         projectName = settingsManager.extractProjectName(
-                             from: windowTitle, 
-                             bundleId: targetApp.bundleIdentifier ?? "", 
-                             appName: targetApp.localizedName ?? ""
-                         )
-                     } else {
-                         displayTitle = "\(targetApp.localizedName ?? "应用") 窗口 \(windowCounter)"
-                         projectName = displayTitle
-                         windowCounter += 1
-                     }
-                     
-                     // AX元素会在getCachedAXElement中自动缓存
+                    let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentIndex)
+                    
+                    let displayTitle: String
+                    let projectName: String
+                    
+                    if !axTitle.isEmpty {
+                        displayTitle = axTitle
+                        projectName = settingsManager.extractProjectName(
+                            from: axTitle,
+                            bundleId: targetApp.bundleIdentifier ?? "",
+                            appName: targetApp.localizedName ?? ""
+                        )
+                    } else if !windowTitle.isEmpty {
+                        displayTitle = windowTitle
+                        projectName = settingsManager.extractProjectName(
+                            from: windowTitle,
+                            bundleId: targetApp.bundleIdentifier ?? "",
+                            appName: targetApp.localizedName ?? ""
+                        )
+                    } else {
+                        displayTitle = "\(targetApp.localizedName ?? "App") window \(windowCounter)"
+                        projectName = displayTitle
+                        windowCounter += 1
+                    }
                     
                     let window = WindowInfo(
                         windowID: windowID,
@@ -689,13 +822,11 @@ class WindowManager: ObservableObject {
                         projectName: projectName,
                         appName: targetApp.localizedName ?? "",
                         processID: processID,
-                        axWindowIndex: validWindowIndex
+                        axWindowIndex: currentIndex
                     )
                     
                     windows.append(window)
                     Logger.log("   ✅ Window added: '\(projectName)'")
-                    
-                    validWindowIndex += 1  // 增加有效窗口索引
                 } else {
                     Logger.log("   ❌ Window filtered out")
                 }
@@ -717,132 +848,155 @@ class WindowManager: ObservableObject {
          
          Logger.log("\n=== CT2 Debug Information Start ===")
          
-         // 获取所有运行的应用
-         let allApps = NSWorkspace.shared.runningApplications
-         Logger.log("Total running applications: \(allApps.count)")
+        // 获取所有运行的应用
+        let allApps = NSWorkspace.shared.runningApplications
+        Logger.log("Total running applications: \(allApps.count)")
+        let runningAppMap = Dictionary(uniqueKeysWithValues: allApps.map { ($0.processIdentifier, $0) })
+        var bundlePrimaryApp: [String: NSRunningApplication] = [:]
          
          // 获取所有窗口，按照前后顺序排列（最前面的窗口排在前面）
          // 这个顺序就是Command+Tab的真实顺序
          let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
          Logger.log("System found \(windowList.count) windows in total")
          
-         // 按应用组织窗口
-         var appWindows: [pid_t: [WindowInfo]] = [:]
-         var appInfoMap: [pid_t: (bundleId: String, appName: String)] = [:]
-         var appFirstWindowOrder: [pid_t: Int] = [:] // 记录每个应用的第一个窗口在列表中的位置
-         
-         // 首先建立processID到应用信息的映射
-         for app in allApps {
-             // 跳过没有用户界面的应用和当前应用
-             guard app.activationPolicy == .regular,
-                   app.bundleIdentifier != Bundle.main.bundleIdentifier else {
-                 continue
-             }
-             
-             appInfoMap[app.processIdentifier] = (
-                 bundleId: app.bundleIdentifier ?? "unknown",
-                 appName: app.localizedName ?? "Unknown App"
-             )
-         }
+        // 按应用组织窗口
+        var appWindows: [pid_t: [WindowInfo]] = [:]
+        var appInfoMap: [pid_t: (bundleId: String, appName: String)] = [:]
+        var appFirstWindowOrder: [pid_t: Int] = [:] // 记录每个应用的第一个窗口在列表中的位置
+
+        // 首先建立processID到应用信息的映射
+        for app in allApps {
+            // 跳过没有用户界面的应用和当前应用
+            guard app.activationPolicy == .regular,
+                  app.bundleIdentifier != Bundle.main.bundleIdentifier,
+                  let bundleId = app.bundleIdentifier else {
+                continue
+            }
+
+            appInfoMap[app.processIdentifier] = (
+                bundleId: bundleId,
+                appName: app.localizedName ?? "Unknown App"
+            )
+
+            if bundlePrimaryApp[bundleId] == nil {
+                bundlePrimaryApp[bundleId] = app
+            }
+        }
          
          Logger.log("Valid application count: \(appInfoMap.count)")
          
-         // 处理所有窗口，按应用分组，同时记录应用首次出现的顺序
-         var windowCounter = 1
-         for (windowIndex, windowInfo) in windowList.enumerated() {
-             guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
-                   let appInfo = appInfoMap[processID] else {
-                 continue
-             }
-             
-             let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
-             let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
-             let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
-             let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
-             
-             // 检查过滤条件
-             let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
-             let hasValidLayer = layer >= 0
-             let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
-             let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
-             let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
-             let hasReasonableSize = width > 100 && height > 100
-             
-             if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
-                 // 记录该应用第一个窗口在列表中的位置（用于排序）
-                 if appFirstWindowOrder[processID] == nil {
-                     appFirstWindowOrder[processID] = windowIndex
-                 }
-                 
-                 // 获取当前应用的窗口数量，用于确定AX窗口索引
-                 let currentAppWindowCount = appWindows[processID]?.count ?? 0
-                 
-                 // 通过AX API获取窗口标题
-                 let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentAppWindowCount)
-                 
-                 let displayTitle: String
-                 let projectName: String
-                 
-                 if !axTitle.isEmpty {
-                     displayTitle = axTitle
-                     projectName = settingsManager.extractProjectName(
-                         from: axTitle,
-                         bundleId: appInfo.bundleId,
-                         appName: appInfo.appName
-                     )
-                 } else if !windowTitle.isEmpty {
-                     displayTitle = windowTitle
-                     projectName = settingsManager.extractProjectName(
-                         from: windowTitle,
-                         bundleId: appInfo.bundleId,
-                         appName: appInfo.appName
-                     )
-                 } else {
-                     displayTitle = "\(appInfo.appName) 窗口 \(windowCounter)"
-                     projectName = displayTitle
-                     windowCounter += 1
-                 }
-                 
-                 // AX元素会在getCachedAXElement中自动缓存
-                 
-                 let window = WindowInfo(
-                     windowID: windowID,
-                     title: displayTitle,
-                     projectName: projectName,
-                     appName: appInfo.appName,
-                     processID: processID,
-                     axWindowIndex: currentAppWindowCount
-                 )
-                 
-                 // 添加到该应用的窗口列表
-                 if appWindows[processID] == nil {
-                     appWindows[processID] = []
-                 }
-                 appWindows[processID]?.append(window)
-             }
-         }
+        // 处理所有窗口，按应用分组，同时记录应用首次出现的顺序
+        var windowCounter = 1
+        var axWindowIndexByProcess: [pid_t: Int] = [:]
+
+        for (windowIndex, windowInfo) in windowList.enumerated() {
+            guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t else {
+                continue
+            }
+
+            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
+            guard let resolvedApp = resolvePrimaryApp(
+                for: processID,
+                ownerName: ownerName,
+                runningAppMap: runningAppMap,
+                bundlePrimaryApp: bundlePrimaryApp
+            ),
+            resolvedApp.bundleIdentifier != Bundle.main.bundleIdentifier,
+            let appInfo = appInfoMap[resolvedApp.processIdentifier] else {
+                continue
+            }
+
+            let windowTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+            let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+            let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID ?? 0
+            let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+
+            // 检查过滤条件
+            let hasValidID = windowInfo[kCGWindowNumber as String] is CGWindowID
+            let hasValidLayer = isValidWindowLayer(layer, forBundleId: resolvedApp.bundleIdentifier)
+            let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any]
+            let width = (bounds?["Width"] as? NSNumber)?.intValue ?? 0
+            let height = (bounds?["Height"] as? NSNumber)?.intValue ?? 0
+            let hasReasonableSize = width > 100 && height > 100
+
+            if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                if isSteamApplication(appInfo.bundleId) {
+                    Logger.log("   🎮 CT2: Steam window detected: Layer \(layer), ID \(windowID) (Owner: \(ownerName ?? "Unknown"), PID: \(processID))")
+                }
+
+                // 记录该应用第一个窗口在列表中的位置（用于排序）
+                if appFirstWindowOrder[resolvedApp.processIdentifier] == nil {
+                    appFirstWindowOrder[resolvedApp.processIdentifier] = windowIndex
+                }
+
+                let currentOwnerWindowCount = axWindowIndexByProcess[processID] ?? 0
+                axWindowIndexByProcess[processID] = currentOwnerWindowCount + 1
+
+                let (axTitle, _) = getAXWindowInfo(
+                    windowID: windowID,
+                    processID: processID,
+                    windowIndex: currentOwnerWindowCount
+                )
+
+                let displayTitle: String
+                let projectName: String
+
+                if !axTitle.isEmpty {
+                    displayTitle = axTitle
+                    projectName = settingsManager.extractProjectName(
+                        from: axTitle,
+                        bundleId: appInfo.bundleId,
+                        appName: appInfo.appName
+                    )
+                } else if !windowTitle.isEmpty {
+                    displayTitle = windowTitle
+                    projectName = settingsManager.extractProjectName(
+                        from: windowTitle,
+                        bundleId: appInfo.bundleId,
+                        appName: appInfo.appName
+                    )
+                } else {
+                    displayTitle = "\(appInfo.appName) window \(windowCounter)"
+                    projectName = displayTitle
+                    windowCounter += 1
+                }
+
+                let window = WindowInfo(
+                    windowID: windowID,
+                    title: displayTitle,
+                    projectName: projectName,
+                    appName: appInfo.appName,
+                    processID: processID,
+                    axWindowIndex: currentOwnerWindowCount
+                )
+
+                if appWindows[resolvedApp.processIdentifier] == nil {
+                    appWindows[resolvedApp.processIdentifier] = []
+                }
+                appWindows[resolvedApp.processIdentifier]?.append(window)
+            }
+        }
          
          // 创建AppInfo对象，同时收集应用激活状态信息
-         for (processID, windows) in appWindows {
-             guard let appInfo = appInfoMap[processID], !windows.isEmpty else {
-                 continue
-             }
-             
-             // 查找对应的NSRunningApplication以获取激活状态
-             let runningApp = allApps.first { $0.processIdentifier == processID }
-             let isActive = runningApp?.isActive ?? false
-             
-             let app = AppInfo(
-                 bundleId: appInfo.bundleId,
-                 processID: processID,
-                 appName: appInfo.appName,
-                 windows: windows,
-                 isActive: isActive,
-                 lastUsedTime: nil  // macOS不直接提供最近使用时间，我们用激活状态来排序
-             )
-             
-             apps.append(app)
-         }
+        for (processID, windows) in appWindows {
+            guard let appInfo = appInfoMap[processID], !windows.isEmpty else {
+                continue
+            }
+
+            let runningApp = runningAppMap[processID]
+            let isActive = runningApp?.isActive ?? false
+
+            let app = AppInfo(
+                bundleId: appInfo.bundleId,
+                processID: processID,
+                appName: appInfo.appName,
+                windows: windows,
+                isActive: isActive,
+                lastUsedTime: nil
+            )
+
+            apps.append(app)
+        }
          
          // 按照窗口在CGWindowListCopyWindowInfo中的出现顺序排序
          // 这样可以真正模拟Command+Tab的行为
@@ -1786,12 +1940,17 @@ class WindowManager: ObservableObject {
                   let width = bounds["Width"] as? CGFloat,
                   let height = bounds["Height"] as? CGFloat else { continue }
             
-            // 过滤条件：在屏幕上、层级为0（正常窗口）、有合理的尺寸
+            // 过滤条件：在屏幕上、有效层级（包含Steam应用特殊处理）、有合理的尺寸
             let hasValidID = windowID > 0
-            let hasValidLayer = layer == 0
+            let hasValidLayer = isValidWindowLayer(layer, forBundleId: targetApp.bundleIdentifier)
             let hasReasonableSize = width > 100 && height > 100
             
             if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
+                // Log Steam application detection
+                if isSteamApplication(targetApp.bundleIdentifier) {
+                    Logger.log("   🎮 Steam window detected: Layer \(layer), ID \(windowID)")
+                }
+                
                 // 尝试通过 Core Graphics API 获取窗口标题
                 let cgTitle = windowInfo[kCGWindowName as String] as? String ?? ""
                 
@@ -1847,119 +2006,90 @@ class WindowManager: ObservableObject {
     func getWindowTitlesForPreview(_ bundleId: String) -> [String] {
         Logger.log("🔍 [Preview] Getting all window titles for bundle ID: \(bundleId)")
         
-        var windowTitles: [String] = []
-        
         // 获取所有运行的应用
         let allApps = NSWorkspace.shared.runningApplications
-        
-        // 找到匹配 bundle ID 的应用
-        guard let targetApp = allApps.first(where: { $0.bundleIdentifier == bundleId }) else {
+        let runningAppMap = Dictionary(uniqueKeysWithValues: allApps.map { ($0.processIdentifier, $0) })
+        var bundlePrimaryApp: [String: NSRunningApplication] = [:]
+
+        for app in allApps where app.activationPolicy == .regular {
+            guard let appBundleId = app.bundleIdentifier else { continue }
+            if bundlePrimaryApp[appBundleId] == nil {
+                bundlePrimaryApp[appBundleId] = app
+            }
+        }
+
+        // 找到匹配 bundle ID 的主应用
+        guard let targetApp = bundlePrimaryApp[bundleId] ?? allApps.first(where: { $0.bundleIdentifier == bundleId }) else {
             Logger.log("❌ [Preview] No running application found with bundle ID: \(bundleId)")
             return []
         }
         
         Logger.log("✅ [Preview] Found application: \(targetApp.localizedName ?? "Unknown") (PID: \(targetApp.processIdentifier))")
-        
-        // 方法1：使用 AX API 获取所有窗口标题
-        let axTitles = getAllAXWindowTitles(for: targetApp.processIdentifier)
-        Logger.log("🔍 [Preview] AX API found \(axTitles.count) window titles")
-        
-        // 如果AX API获取到了标题，优先使用
-        if !axTitles.isEmpty {
-            windowTitles.append(contentsOf: axTitles)
-        } else {
-            // 方法2：回退到 Core Graphics API
-            Logger.log("⚠️ [Preview] AX API failed, falling back to Core Graphics API")
-            let cgTitles = getAllCGWindowTitles(for: targetApp.processIdentifier, appName: targetApp.localizedName ?? "应用")
-            windowTitles.append(contentsOf: cgTitles)
+        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        Logger.log("🔍 [Preview] Inspecting \(windowList.count) CG windows")
+
+        var windowTitles: Set<String> = []
+        var windowIndexByProcess: [pid_t: Int] = [:]
+
+        for windowInfo in windowList {
+            guard let processID = windowInfo[kCGWindowOwnerPID as String] as? pid_t else { continue }
+            let ownerName = windowInfo[kCGWindowOwnerName as String] as? String
+
+            if !windowBelongsToApp(
+                windowProcessID: processID,
+                ownerName: ownerName,
+                targetApp: targetApp,
+                runningAppMap: runningAppMap,
+                bundlePrimaryApp: bundlePrimaryApp
+            ) {
+                continue
+            }
+
+            let layer = windowInfo[kCGWindowLayer as String] as? Int ?? -1
+            let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool ?? false
+            guard let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID,
+                  let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
+                  let width = bounds["Width"] as? NSNumber,
+                  let height = bounds["Height"] as? NSNumber else {
+                continue
+            }
+
+            let hasValidID = windowID > 0
+            let hasValidLayer = isValidWindowLayer(layer, forBundleId: targetApp.bundleIdentifier)
+            let hasReasonableSize = width.intValue > 100 && height.intValue > 100
+
+            if !(hasValidID && hasValidLayer && hasReasonableSize && isOnScreen) {
+                continue
+            }
+
+            let currentIndex = windowIndexByProcess[processID] ?? 0
+            windowIndexByProcess[processID] = currentIndex + 1
+
+            let cgTitle = windowInfo[kCGWindowName as String] as? String ?? ""
+            let (axTitle, _) = getAXWindowInfo(windowID: windowID, processID: processID, windowIndex: currentIndex)
+
+            let finalTitle: String
+            if !axTitle.isEmpty {
+                finalTitle = axTitle
+            } else if !cgTitle.isEmpty {
+                finalTitle = cgTitle
+            } else {
+                finalTitle = "\(targetApp.localizedName ?? "应用") window \(windowIndexByProcess[processID] ?? 1)"
+            }
+
+            if !finalTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                windowTitles.insert(finalTitle)
+                Logger.log("   ✅ [Preview] Window found: '\(finalTitle)' (Owner: \(ownerName ?? "Unknown"), PID: \(processID), Layer: \(layer))")
+            }
         }
-        
-        // 去重并过滤空标题
-        let uniqueTitles = Array(Set(windowTitles)).filter { !$0.isEmpty && $0.trimmingCharacters(in: .whitespaces) != "" }
-        
-        Logger.log("📋 [Preview] Total unique window titles found: \(uniqueTitles.count)")
-        for (index, title) in uniqueTitles.enumerated() {
+
+        let sortedTitles = windowTitles.sorted()
+        Logger.log("📋 [Preview] Total unique window titles found: \(sortedTitles.count)")
+        for (index, title) in sortedTitles.enumerated() {
             Logger.log("   \(index + 1). '\(title)'")
         }
-        
-        return uniqueTitles.sorted() // 排序以保持一致性
-    }
-    
-    /// 使用 AX API 获取指定进程的所有窗口标题
-    private func getAllAXWindowTitles(for processID: pid_t) -> [String] {
-        let app = AXUIElementCreateApplication(processID)
-        var windowTitles: [String] = []
-        
-        var windowsRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-              let axWindows = windowsRef as? [AXUIElement] else {
-            Logger.log("❌ [Preview] Cannot get AX window list for PID: \(processID)")
-            return []
-        }
-        
-        Logger.log("🔍 [Preview] Found \(axWindows.count) AX windows for PID: \(processID)")
-        
-        // 遍历所有 AX 窗口
-        for (index, axWindow) in axWindows.enumerated() {
-            var titleRef: CFTypeRef?
-            if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
-               let title = titleRef as? String, !title.isEmpty {
-                windowTitles.append(title)
-                Logger.log("   ✅ [Preview] AX Window[\(index)]: '\(title)'")
-            } else {
-                Logger.log("   ⚠️ [Preview] AX Window[\(index)]: No title or empty")
-            }
-        }
-        
-        return windowTitles
-    }
-    
-    /// 使用 Core Graphics API 获取指定进程的所有窗口标题
-    private func getAllCGWindowTitles(for processID: pid_t, appName: String) -> [String] {
-        var windowTitles: [String] = []
-        
-        // 获取所有窗口信息
-        let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
-        
-        Logger.log("🔍 [Preview] Checking \(windowList.count) CG windows for PID: \(processID)")
-        
-        var validWindowCount = 0
-        
-        // 过滤出目标应用的窗口
-        for windowInfo in windowList {
-            guard let windowProcessID = windowInfo[kCGWindowOwnerPID as String] as? pid_t,
-                  windowProcessID == processID,
-                  let isOnScreen = windowInfo[kCGWindowIsOnscreen as String] as? Bool,
-                  let layer = windowInfo[kCGWindowLayer as String] as? Int,
-                  let windowID = windowInfo[kCGWindowNumber as String] as? CGWindowID,
-                  let bounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
-                  let width = bounds["Width"] as? CGFloat,
-                  let height = bounds["Height"] as? CGFloat else { continue }
-            
-            // 过滤条件：在屏幕上、层级为0（正常窗口）、有合理的尺寸
-            let hasValidID = windowID > 0
-            let hasValidLayer = layer == 0
-            let hasReasonableSize = width > 100 && height > 100
-            
-            if hasValidID && hasValidLayer && hasReasonableSize && isOnScreen {
-                validWindowCount += 1
-                
-                // 尝试获取窗口标题
-                let cgTitle = windowInfo[kCGWindowName as String] as? String ?? ""
-                
-                let finalTitle: String
-                if !cgTitle.isEmpty {
-                    finalTitle = cgTitle
-                } else {
-                    finalTitle = "\(appName) 窗口 \(validWindowCount)"
-                }
-                
-                windowTitles.append(finalTitle)
-                Logger.log("   ✅ [Preview] CG Window[\(validWindowCount)]: '\(finalTitle)'")
-            }
-        }
-        
-        return windowTitles
+
+        return sortedTitles
     }
     
     // MARK: - Number Key Mapping Helper

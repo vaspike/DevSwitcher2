@@ -1996,15 +1996,6 @@ struct VerticalPositionControl: View {
                 )
                 .frame(minWidth: 120)
                 
-                // Value display (read-only)
-                Text(textFieldValue)
-                    .font(.system(.body, design: .monospaced))
-                    .frame(width: 60, height: 22)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                    )
                 
                 // Reset button
                 Button(LocalizedStrings.resetToGoldenRatio) {

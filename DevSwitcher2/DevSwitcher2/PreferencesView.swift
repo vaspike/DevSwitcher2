@@ -1932,7 +1932,40 @@ struct SwitcherDisplaySettingsView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
-                
+
+                // Selected Item Display Style Setting
+                Divider()
+                    .padding(.horizontal, -20)
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.selectedItemDisplayStyleLabel)
+                            .font(.headline)
+                            .fontWeight(.medium)
+
+                        Text(LocalizedStrings.selectedItemDisplayStyleDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Picker("", selection: Binding(
+                        get: { settingsManager.settings.selectedItemDisplayStyle },
+                        set: { newValue in
+                            settingsManager.updateSelectedItemDisplayStyle(newValue)
+                        }
+                    )) {
+                        ForEach(SelectedItemDisplayStyle.allCases, id: \.self) { style in
+                            Text(style.displayName).tag(style)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(width: 200)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+
                 // Color Scheme Setting
                 Divider()
                     .padding(.horizontal, -20)

@@ -238,6 +238,12 @@
 "circular_layout_outer_ring_style_transparent" = "Transparent";
 "circular_layout_outer_ring_style_frosted" = "Frosted Glass";
 
+// MARK: - Selected Item Display Style Settings
+"selected_item_display_style_label" = "Selected Item Display Style";
+"selected_item_display_style_description" = "Choose the visual effect for the currently selected item";
+"selected_item_display_style_floating" = "Floating";
+"selected_item_display_style_no_floating" = "No Floating";
+
 // MARK: - Add App Config Dialog Section Titles
 "app_selection_section" = "App Selection";
 "basic_info_section" = "Basic Information";

@@ -238,6 +238,12 @@
 "circular_layout_outer_ring_style_transparent" = "透明";
 "circular_layout_outer_ring_style_frosted" = "毛玻璃";
 
+// MARK: - 选中项显示效果设置
+"selected_item_display_style_label" = "选中项显示效果";
+"selected_item_display_style_description" = "选择当前选中项的视觉效果";
+"selected_item_display_style_floating" = "浮动";
+"selected_item_display_style_no_floating" = "不浮动";
+
 // MARK: - 添加应用配置界面分区标题
 "app_selection_section" = "应用选择";
 "basic_info_section" = "基本信息";

@@ -373,7 +373,13 @@ struct LocalizedStrings {
     static let circularLayoutOuterRingStyleDescription = "circular_layout_outer_ring_style_description".localized
     static let circularLayoutOuterRingStyleTransparent = "circular_layout_outer_ring_style_transparent".localized
     static let circularLayoutOuterRingStyleFrosted = "circular_layout_outer_ring_style_frosted".localized
-    
+
+    // MARK: - Selected Item Display Style Settings
+    static let selectedItemDisplayStyleLabel = "selected_item_display_style_label".localized
+    static let selectedItemDisplayStyleDescription = "selected_item_display_style_description".localized
+    static let selectedItemDisplayStyleFloating = "selected_item_display_style_floating".localized
+    static let selectedItemDisplayStyleNoFloating = "selected_item_display_style_no_floating".localized
+
     // MARK: - Color Scheme Settings
     static let colorSchemeSectionTitle = "color_scheme_section_title".localized
     static let colorSchemeLabel = "color_scheme_label".localized

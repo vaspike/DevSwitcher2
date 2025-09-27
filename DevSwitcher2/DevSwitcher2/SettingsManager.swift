@@ -194,11 +194,26 @@ enum SwitcherLayoutStyle: String, CaseIterable, Codable {
     }
 }
 
+// MARK: - Selected Item Display Style
+enum SelectedItemDisplayStyle: String, CaseIterable, Codable {
+    case floating = "floating"
+    case noFloating = "noFloating"
+
+    var displayName: String {
+        switch self {
+        case .floating:
+            return LocalizedStrings.selectedItemDisplayStyleFloating
+        case .noFloating:
+            return LocalizedStrings.selectedItemDisplayStyleNoFloating
+        }
+    }
+}
+
 // MARK: - Circular Outer Ring Style
 enum CircularOuterRingStyle: String, CaseIterable, Codable {
     case transparent = "transparent"
     case frosted = "frosted"
-    
+
     var displayName: String {
         switch self {
         case .transparent:
@@ -207,7 +222,7 @@ enum CircularOuterRingStyle: String, CaseIterable, Codable {
             return LocalizedStrings.circularLayoutOuterRingStyleFrosted
         }
     }
-    
+
     var opacity: Double {
         switch self {
         case .transparent:
@@ -500,7 +515,10 @@ struct AppSettings: Codable {
     
     // Circular layout outer ring style settings
     var circularLayoutOuterRingStyle: CircularOuterRingStyle
-    
+
+    // Selected item display style settings
+    var selectedItemDisplayStyle: SelectedItemDisplayStyle
+
     // Color scheme settings
     var colorScheme: ColorScheme
     
@@ -561,6 +579,8 @@ struct AppSettings: Codable {
         circularLayoutSize: 1.0,
         // Circular layout outer ring style default settings
         circularLayoutOuterRingStyle: .frosted,
+        // Selected item display style default settings
+        selectedItemDisplayStyle: .floating,
         // Color scheme default settings
         colorScheme: .system
     )
@@ -692,7 +712,13 @@ class SettingsManager: ObservableObject {
         settings.circularLayoutOuterRingStyle = style
         saveSettings()
     }
-    
+
+    // MARK: - Selected Item Display Style Settings
+    func updateSelectedItemDisplayStyle(_ style: SelectedItemDisplayStyle) {
+        settings.selectedItemDisplayStyle = style
+        saveSettings()
+    }
+
     // MARK: - Color Scheme Settings
     func updateColorScheme(_ scheme: ColorScheme) {
         settings.colorScheme = scheme

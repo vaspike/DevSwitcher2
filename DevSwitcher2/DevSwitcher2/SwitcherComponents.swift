@@ -647,8 +647,7 @@ struct CircularLayoutView<ItemType>: View {
     let currentIndex: Int
     let onItemSelect: (Int) -> Void
     let itemContentBuilder: (ItemType, Bool, Bool, Int) -> AnyView
-    
-    @State private var hoveredIndex: Int? = nil
+
     @StateObject private var settingsManager = SettingsManager.shared
 
     // Ring layout parameters
@@ -681,9 +680,6 @@ struct CircularLayoutView<ItemType>: View {
             centerArea
         }
         .frame(width: ringSize, height: ringSize)
-        .onChange(of: currentIndex) { _ in
-            hoveredIndex = nil
-        }
     }
 
     // MARK: - Ring Sectors (Original implementation)
@@ -704,7 +700,7 @@ struct CircularLayoutView<ItemType>: View {
                         outerRadius: outerRadius
                     )
                     .fill(.ultraThinMaterial)
-                    .opacity(settingsManager.settings.circularLayoutOuterRingStyle == .frosted ? 1.0 : 0.1)
+                    .opacity(sectorBackgroundOpacity())
                     
                     // Sector color overlay for selection and hover
                     ArcSector(
@@ -720,11 +716,8 @@ struct CircularLayoutView<ItemType>: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
-            .scaleEffect(index == hoveredIndex ? 1.02 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: hoveredIndex)
-            .onHover { isHovering in
-                hoveredIndex = isHovering ? index : nil
-            }
+            .scaleEffect(selectedItemScaleEffect(for: index))
+            .animation(.easeInOut(duration: 0.15), value: currentIndex)
         }
     }
     
@@ -804,22 +797,41 @@ struct CircularLayoutView<ItemType>: View {
         let endAngle = startAngle + anglePerItem
         return (start: Angle(degrees: startAngle), end: Angle(degrees: endAngle))
     }
-    
+
+    private func selectedItemScaleEffect(for index: Int) -> CGFloat {
+        let displayStyle = settingsManager.settings.selectedItemDisplayStyle
+        switch displayStyle {
+        case .floating:
+            return index == currentIndex ? 1.02 : 1.0
+        case .noFloating:
+            return 1.0
+        }
+    }
+
+    private func sectorBackgroundOpacity() -> Double {
+        let ringStyle = settingsManager.settings.circularLayoutOuterRingStyle
+        switch ringStyle {
+        case .frosted:
+            return 1.0
+        case .transparent:
+            return 0.1
+        }
+    }
+
     private func sectorBackgroundColor(for index: Int) -> Color {
         let colorScheme = settingsManager.settings.colorScheme
         let ringStyle = settingsManager.settings.circularLayoutOuterRingStyle
         
         if index == currentIndex {
             return colorScheme.primaryColor.opacity(0.3)
-        } else if index == hoveredIndex {
-            return colorScheme.primaryColor.opacity(0.1)
         } else {
-            // 在毛玻璃模式下，所有非选中项都与0号item保持一致
-            if ringStyle == .frosted {
-                // 使用0号item的背景色作为统一标准
+            // 根据不同样式设置背景色
+            switch ringStyle {
+            case .frosted:
+                // 毛玻璃模式：使用0号item的背景色作为统一标准
                 return sectorBackgroundColorForIndex0()
-            } else {
-                // 透明模式下使用更淡的背景色
+            case .transparent:
+                // 透明模式：使用更淡的背景色
                 return colorScheme.secondaryColor.opacity(0.05)
             }
         }

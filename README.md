@@ -22,13 +22,17 @@ A modern menu bar application that enhances window and application switching exp
 
 ---
 
-![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
+<img width="1614" height="1064" alt="image" src="https://github.com/user-attachments/assets/8914b824-40d1-4061-b3af-f84f7c07277a" />
 
-![1448X1002/1.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/2ifI/1448X1002/1.png)
 
-![2002X1436/4.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/z493/2002X1436/4.png)
+<img width="1448" height="1002" alt="image" src="https://github.com/user-attachments/assets/ce5d65cc-a42f-4951-b3a8-805b32e8ccf9" />
 
-![3.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/Mamo/3574X2316/3.png/webp)
+
+<img width="2002" height="1436" alt="image" src="https://github.com/user-attachments/assets/ba1d2fa9-335b-4cf5-a78f-d3da03d474de" />
+
+
+<img width="3574" height="2316" alt="image" src="https://github.com/user-attachments/assets/a7da8df1-b9c7-4d35-973b-1669932d1599" />
+
 
 ## ✨ Key Features
 

@@ -11,10 +11,10 @@
 
 A modern menu bar application that enhances window and application switching experience for smoother workflow.
 
-[📥 Download Latest](https://github.com/vaspike/DevSwitcher2/releases) · [🐛 Report Issues](https://github.com/vaspike/DevSwitcher2/issues) · [💡 Feature Requests](https://github.com/vaspike/DevSwitcher2/discussions) · [🇨🇳 中文文档](README_CN.md)
+[Download Latest](https://github.com/vaspike/DevSwitcher2/releases) · [Report Issues](https://github.com/vaspike/DevSwitcher2/issues) · [Feature Requests](https://github.com/vaspike/DevSwitcher2/discussions) · [中文文档](README_CN.md)
 </div>
 
-## 📸 Preview
+## Preview
 
 <img width="505" height="505" alt="image" src="https://github.com/user-attachments/assets/8bef6aca-3c01-4de5-bfd4-c4da589af18a" />
 
@@ -36,32 +36,32 @@ A modern menu bar application that enhances window and application switching exp
 
 ## ✨ Key Features
 
-### 🚀 Enhanced Application Switchers
+### Enhanced Application Switchers
 - **Intra-App Window Switcher**: Fast switching between windows within the same app (Enhanced Command + `)
 - **Inter-App Switcher**: Switching between all applications (Enhanced Command + Tab)
 
-### 🎯 Intelligent Window Recognition
+### Intelligent Window Recognition
 - Smart title extraction with multiple strategies (first part, last part, custom separator)
 - Automatic project name recognition (e.g., Xcode projects, VSCode workspaces)
 - Configurable app-specific rules
 
-### ⚡️ Ultimate Performance
+### Ultimate Performance
 - Icon caching system for smooth visual experience
 - Intelligent multi-display support
 - 60Hz real-time response
 - Optimized memory management
 
-### 🛠 Highly Customizable
+### Highly Customizable
 - Fully customizable hotkey settings
 - Flexible window title display strategies
 
-### 🌐 Internationalization Support
+### Internationalization Support
 - Complete Chinese and English localization
 - Dynamic language switching
 - Automatic system language detection
 
 
-## 🚀 Quick Start
+## Quick Start
 
 ### System Requirements
 - macOS 12.0 or later
@@ -105,7 +105,7 @@ xcodebuild -project DevSwitcher2.xcodeproj -scheme DevSwitcher2 -configuration R
 3. **Customize Settings**: Access preferences through the menu bar icon
 4. **Note**: The `inter-app switcher` feature is disabled by default and needs to be manually enabled in preferences
 
-## 🎮 Usage Guide
+## Usage Guide
 
 ### Basic Operations
 - **Window Switching**: `Command + `` (backtick) - Switch between windows of the same app
@@ -126,7 +126,7 @@ DevSwitcher2 provides three title extraction strategies:
 2. **Last Part**: Display the last half of the title (suitable for windows with app names last)
 3. **Custom Separator**: Smart extraction based on specified separators (like " - ", " | ", etc.)
 
-## ⚙️ Configuration Details
+## Configuration Details
 
 ### Hotkey Settings
 - **Modifier Keys**: Command, Option, Control, Shift and their combinations
@@ -145,7 +145,7 @@ Configure personalized title extraction rules for different apps:
 - **Chinese**: Simplified Chinese interface
 - Changes take effect after restart
 
-## 🛠 Development Guide
+## Development Guide
 
 ### Technical Architecture
 - **UI Framework**: SwiftUI + AppKit hybrid development
@@ -181,7 +181,7 @@ DevSwitcher2/
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Create a Pull Request
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -202,7 +202,7 @@ A: Restart the app or reset settings to default values
 - Adjust title extraction strategies to fit your workflow
 - Disable unnecessary switching modes to save resources
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 

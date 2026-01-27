@@ -11,37 +11,37 @@
 
 一个现代化的菜单栏应用，提供增强的窗口和应用切换体验，让您的工作流程更加流畅。
 
-[📥 下载最新版本](https://github.com/vaspike/DevSwitcher2/releases) · [🐛 报告问题](https://github.com/vaspike/DevSwitcher2/issues) · [💡 功能建议](https://github.com/vaspike/DevSwitcher2/discussions)
+[下载最新版本](https://github.com/vaspike/DevSwitcher2/releases) · [报告问题](https://github.com/vaspike/DevSwitcher2/issues) · [功能建议](https://github.com/vaspike/DevSwitcher2/discussions)
 
 </div>
 
-## ✨ 主要特性
+## 主要特性
 
-### 🚀 应用切换器增强
+### 应用切换器增强
 - **应用内窗口切换器**: 同一应用内的窗口快速切换（增强版 Command + `）
 - **应用间切换器**: 所有应用间的切换（增强版 Command + Tab）
 
-### 🎯 智能窗口识别
+### 智能窗口识别
 - 智能标题提取，支持多种策略（优先部分、末尾部分、自定义分隔符）
 - 自动识别项目名称（如 Xcode 项目、VSCode 工作区等）
 - 可配置的应用特定规则
 
-### ⚡️ 极致性能
+### 极致性能
 - 图标缓存系统，流畅的视觉体验
 - 多显示器智能支持
 - 60Hz 实时响应
 - 优化的内存管理
 
-### 🛠 高度可定制
+### 高度可定制
 - 完全自定义的快捷键设置
 - 灵活的窗口标题显示策略
 
-### 🌐 国际化支持
+### 国际化支持
 - 完整的中英文本地化
 - 动态语言切换
 - 系统语言自动检测
 
-## 📸 预览
+## 预览
 
 ![1614X1064/2.png](https://tc.z.wiki/autoupload/f/bRWXqOmJV6gqytU3GpotFgC03Y8QskjEI7gIxHL71tayl5f0KlZfm6UsKj-HyTuv/20250728/szAC/1614X1064/2.png)
 
@@ -53,7 +53,7 @@
 
 </div>
 
-## 🚀 快速开始
+## 快速开始
 
 ### 系统要求
 - macOS 12.0 或更高版本
@@ -97,7 +97,7 @@ xcodebuild -project DevSwitcher2.xcodeproj -scheme DevSwitcher2 -configuration R
 3. **自定义设置**：通过菜单栏图标访问偏好设置
 4. **注意**: 首次安装时, `应用间切换器`功能是未启用的, 需要在偏好设置中手动开启
 
-## 🎮 使用指南
+## 使用指南
 
 ### 基本操作
 - **DS2 窗口切换**: `Command + `` (反引号) - 在同一应用的窗口间切换
@@ -118,7 +118,7 @@ DevSwitcher2 提供三种标题提取策略：
 2. **末尾部分**: 显示标题的后半部分（适合应用名在后的窗口）
 3. **自定义分隔符**: 根据指定分隔符智能提取（如 " - ", " | " 等）
 
-## ⚙️ 配置详解
+## 配置详解
 
 ### 快捷键设置
 - **修饰键**: Command, Option, Control, Shift 及其组合
@@ -137,7 +137,7 @@ DevSwitcher2 提供三种标题提取策略：
 - **中文**: 简体中文界面
 - 更改后重启生效
 
-## 🛠 开发指南
+## 开发指南
 
 ### 技术架构
 - **UI框架**: SwiftUI + AppKit 混合开发
@@ -173,6 +173,6 @@ DevSwitcher2/
 5. 创建 Pull Request
 
 
-## 📄 许可证
+## 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。

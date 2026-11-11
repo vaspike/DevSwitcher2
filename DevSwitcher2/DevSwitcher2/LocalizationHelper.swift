@@ -173,6 +173,7 @@ struct LocalizedStrings {
     static let about = "about".localized
     static let preferencesSubtitle = "preferences_subtitle".localized
     static let generalSettingsTabTitle = "general_settings_tab_title".localized
+    static let switcherSettingsTabTitle = "switcher_settings_tab_title".localized
     static let advancedSettingsTabTitle = "advanced_settings_tab_title".localized
     static let aboutTabTitle = "about_tab_title".localized
     static let hotkeySettings = "hotkey_settings".localized
@@ -417,22 +418,14 @@ struct LocalizedStrings {
     static let aboutApp = "about_app".localized
     static let version = "version".localized
     static let appDescription = "app_description".localized
-    static let mainFeatures = "main_features".localized
-    static let feature1 = "feature_1".localized
-    static let feature2 = "feature_2".localized
-    static let feature3 = "feature_3".localized
-    static let feature4 = "feature_4".localized
-    static let feature5 = "feature_5".localized
-    static let feature6 = "feature_6".localized
     static let developmentInfo = "development_info".localized
     static let author = "author".localized
     static let gitHub = "github".localized
     static let openGitHub = "open_github".localized
-    static let website = "website".localized
-    static let openWebsite = "open_website".localized
     static let buyMeCoffee = "buy_me_coffee".localized
     static let supportDevelopment = "support_development".localized
     static let coffeeDescription = "coffee_description".localized
+    static let contactEmail = "contact_email".localized
     static let copyright = "copyright".localized
 }
 

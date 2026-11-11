@@ -89,6 +89,7 @@
 "about_tab" = "关于";
 "preferences_subtitle" = "配置与设置";
 "general_settings_tab_title" = "常规";
+"switcher_settings_tab_title" = "切换器";
 "advanced_settings_tab_title" = "高级";
 "about_tab_title" = "关于";
 
@@ -290,23 +291,15 @@
 // MARK: - 关于页面
 "about_app" = "关于 DevSwitcher2";
 "version" = "版本 2.8.2";
-"app_description" = "DevSwitcher2 是一款现代化的 macOS 生产力工具，通过双模式切换功能增强您的窗口和应用切换体验。";
-"main_features" = "主要功能:";
-"feature_1" = "• DS2 模式：增强的同应用窗口切换";
-"feature_2" = "• CT2 模式：改进的全应用 Command+Tab";
-"feature_3" = "• 智能标题提取，支持多种策略";
-"feature_4" = "• 自定义快捷键和应用特定规则";
-"feature_5" = "• 多显示器支持，智能焦点转移";
-"feature_6" = "• 图标缓存系统，流畅性能表现";
+"app_description" = "一个现代化的菜单栏应用，提供增强的窗口和应用切换体验，让您的工作流程更加流畅。";
 "development_info" = "开发信息";
-"author" = "作者：River";
+"author" = "作者";
 "github" = "GitHub 仓库";
-"open_github" = "GitHub";
-"website" = "官方网站";
-"open_website" = "访问官网";
+"open_github" = "点个 Star";
 "buy_me_coffee" = "请我喝咖啡";
 "support_development" = "支持开发";
-"coffee_description" = "如果您觉得 DevSwitcher2 很有用，请考虑请我喝杯咖啡来支持持续开发！";
+"coffee_description" = "点个 Star 或请我喝杯咖啡来支持开发。";
+"contact_email" = "邮箱";
 "copyright" = "© 2025 River. 保留所有权利。";
 
 // MARK: - 配色方案设置

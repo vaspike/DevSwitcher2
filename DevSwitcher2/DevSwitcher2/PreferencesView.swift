@@ -1527,52 +1527,6 @@ struct AboutView: View {
             
             // 链接按钮区域 - 重新设计为更美观的卡片式布局
             HStack(spacing: 16) {
-                // 官网按钮 - 主要按钮，稍大一些
-                Button(action: {
-                    if let url = URL(string: "https://rivermao.com/dev/devswitcher2") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "globe")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                Circle()
-                                    .fill(LinearGradient(
-                                        colors: [Color.green.opacity(0.8), Color.teal.opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ))
-                            )
-                        
-                        Text(LocalizedStrings.openWebsite)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.primary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 12)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(LinearGradient(
-                                colors: [Color.green.opacity(0.3), Color.teal.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .help(LocalizedStrings.website)
-                .scaleEffect(1.0)
-                .onHover { isHovered in
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        // 可以添加悬停效果
-                    }
-                }
-                
                 // GitHub按钮
                 Button(action: {
                     if let url = URL(string: "https://github.com/vaspike/DevSwitcher2") {

@@ -6,6 +6,14 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertTrue(AppSettings.default.showMenuBarIcon)
     }
 
+    func testFirstInstallAndResetAppearanceDefaults() {
+        let defaults = AppSettings.default
+        XCTAssertEqual(defaults.switcherLayoutStyle, .circular)
+        XCTAssertEqual(defaults.circularLayoutOuterRingStyle, .transparent)
+        XCTAssertEqual(defaults.colorScheme, .graphite)
+        XCTAssertEqual(defaults.circularLayoutSize, 2.0)
+    }
+
     func testLegacySettingsWithoutMenuBarIconPreserveExistingValues() throws {
         var legacySettings = AppSettings.default
         legacySettings.modifierKey = .option
@@ -17,7 +25,9 @@ final class AppSettingsTests: XCTestCase {
         legacySettings.showNumberKeys = false
         legacySettings.switcherFollowActiveWindow = false
         legacySettings.switcherVerticalPosition = 0.61
-        legacySettings.switcherLayoutStyle = .circular
+        legacySettings.switcherLayoutStyle = .list
+        legacySettings.circularLayoutSize = 1.4
+        legacySettings.circularLayoutOuterRingStyle = .frosted
         legacySettings.colorScheme = .ocean
         legacySettings.appTitleConfigs = [
             "com.example.LegacyApp": AppTitleConfig(
@@ -47,7 +57,9 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertFalse(migratedSettings.showNumberKeys)
         XCTAssertFalse(migratedSettings.switcherFollowActiveWindow)
         XCTAssertEqual(migratedSettings.switcherVerticalPosition, 0.61)
-        XCTAssertEqual(migratedSettings.switcherLayoutStyle, .circular)
+        XCTAssertEqual(migratedSettings.switcherLayoutStyle, .list)
+        XCTAssertEqual(migratedSettings.circularLayoutSize, 1.4)
+        XCTAssertEqual(migratedSettings.circularLayoutOuterRingStyle, .frosted)
         XCTAssertEqual(migratedSettings.colorScheme, .ocean)
 
         let migratedAppConfig = try XCTUnwrap(migratedSettings.appTitleConfigs["com.example.LegacyApp"])

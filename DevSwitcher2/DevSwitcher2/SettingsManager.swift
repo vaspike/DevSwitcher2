@@ -576,15 +576,15 @@ struct AppSettings: Codable {
         // Switcher header style default settings
         switcherHeaderStyle: .default,
         // Switcher layout style default settings
-        switcherLayoutStyle: .list,
+        switcherLayoutStyle: .circular,
         // Circular layout size default settings
-        circularLayoutSize: 1.0,
+        circularLayoutSize: 2.0,
         // Circular layout outer ring style default settings
-        circularLayoutOuterRingStyle: .frosted,
+        circularLayoutOuterRingStyle: .transparent,
         // Selected item display style default settings
         selectedItemDisplayStyle: .floating,
         // Color scheme default settings
-        colorScheme: .system
+        colorScheme: .graphite
     )
 }
 

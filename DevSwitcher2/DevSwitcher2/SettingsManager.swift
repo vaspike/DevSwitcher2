@@ -494,6 +494,7 @@ struct AppSettings: Codable {
     
     // General settings
     var launchAtStartup: Bool
+    var showMenuBarIcon: Bool
     
     // Switcher UI settings
     var showNumberKeys: Bool
@@ -565,6 +566,7 @@ struct AppSettings: Codable {
         ct2TriggerKey: .tab,
         // General default settings
         launchAtStartup: false,
+        showMenuBarIcon: true,
         // Switcher UI default settings
         showNumberKeys: true,
         // Switcher behavior default settings
@@ -584,6 +586,53 @@ struct AppSettings: Codable {
         // Color scheme default settings
         colorScheme: .system
     )
+}
+
+extension AppSettings {
+    private enum CodingKeys: String, CodingKey {
+        case modifierKey
+        case triggerKey
+        case appTitleConfigs
+        case defaultTitleStrategy
+        case defaultCustomSeparator
+        case ct2Enabled
+        case ct2ModifierKey
+        case ct2TriggerKey
+        case launchAtStartup
+        case showMenuBarIcon
+        case showNumberKeys
+        case switcherFollowActiveWindow
+        case switcherVerticalPosition
+        case switcherHeaderStyle
+        case switcherLayoutStyle
+        case circularLayoutSize
+        case circularLayoutOuterRingStyle
+        case selectedItemDisplayStyle
+        case colorScheme
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        modifierKey = try container.decode(ModifierKey.self, forKey: .modifierKey)
+        triggerKey = try container.decode(TriggerKey.self, forKey: .triggerKey)
+        appTitleConfigs = try container.decode([String: AppTitleConfig].self, forKey: .appTitleConfigs)
+        defaultTitleStrategy = try container.decode(TitleExtractionStrategy.self, forKey: .defaultTitleStrategy)
+        defaultCustomSeparator = try container.decode(String.self, forKey: .defaultCustomSeparator)
+        ct2Enabled = try container.decode(Bool.self, forKey: .ct2Enabled)
+        ct2ModifierKey = try container.decode(ModifierKey.self, forKey: .ct2ModifierKey)
+        ct2TriggerKey = try container.decode(TriggerKey.self, forKey: .ct2TriggerKey)
+        launchAtStartup = try container.decode(Bool.self, forKey: .launchAtStartup)
+        showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? true
+        showNumberKeys = try container.decode(Bool.self, forKey: .showNumberKeys)
+        switcherFollowActiveWindow = try container.decode(Bool.self, forKey: .switcherFollowActiveWindow)
+        switcherVerticalPosition = try container.decode(Double.self, forKey: .switcherVerticalPosition)
+        switcherHeaderStyle = try container.decode(SwitcherHeaderStyle.self, forKey: .switcherHeaderStyle)
+        switcherLayoutStyle = try container.decode(SwitcherLayoutStyle.self, forKey: .switcherLayoutStyle)
+        circularLayoutSize = try container.decode(Double.self, forKey: .circularLayoutSize)
+        circularLayoutOuterRingStyle = try container.decode(CircularOuterRingStyle.self, forKey: .circularLayoutOuterRingStyle)
+        selectedItemDisplayStyle = try container.decode(SelectedItemDisplayStyle.self, forKey: .selectedItemDisplayStyle)
+        colorScheme = try container.decode(ColorScheme.self, forKey: .colorScheme)
+    }
 }
 
 // MARK: - Settings Manager
@@ -638,6 +687,7 @@ class SettingsManager: ObservableObject {
     func resetToDefault() {
         settings = AppSettings.default
         saveSettings()
+        NotificationCenter.default.post(name: .menuBarIconVisibilityChanged, object: nil)
     }
     
     // MARK: - Hotkey Settings
@@ -666,6 +716,12 @@ class SettingsManager: ObservableObject {
         
         // Apply launch at startup setting
         setLaunchAtStartup(enabled)
+    }
+
+    func updateShowMenuBarIcon(_ visible: Bool) {
+        settings.showMenuBarIcon = visible
+        saveSettings()
+        NotificationCenter.default.post(name: .menuBarIconVisibilityChanged, object: nil)
     }
     
     // MARK: - Switcher UI Settings

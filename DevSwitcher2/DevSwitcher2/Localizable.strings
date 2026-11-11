@@ -21,6 +21,8 @@
 "general_settings_section_title" = "General Settings";
 "launch_at_startup" = "Launch at Startup";
 "launch_at_startup_description" = "Automatically start DevSwitcher2 when you log in";
+"show_menu_bar_icon" = "Show Menu Bar Icon";
+"show_menu_bar_icon_description" = "When hidden, reopen DevSwitcher2 from Applications or Spotlight to open Preferences. Switchers and hotkeys keep running.";
 
 // MARK: - DS2 Window Switcher Interface
 "window_switcher_title" = "Select Window";
@@ -58,6 +60,9 @@
 
 // MARK: - Error Messages
 "no_windows_found" = "No windows found for the current application";
+"default_app_name" = "App";
+"unnamed_window" = "%@ Window";
+"unnamed_window_numbered" = "%@ Window %d";
 "hotkey_registration_failed" = "Failed to register hotkey";
 "hotkey_registration_success" = "Successfully registered Command + ` hotkey";
 "hotkey_conflict_title" = "Hotkey Conflict";
@@ -179,7 +184,7 @@
 "preview" = "Preview Results";
 "preview_window_titles" = "Window Titles";
 "select_window_title" = "Select a window title";
-"no_windows_found" = "No windows found for this app";
+"preview_no_windows_found" = "No windows found for this app";
 "app_not_running" = "Application not currently running";
 "extraction_result" = "Extraction Result";
 "copy_title" = "Click to copy title";
@@ -210,6 +215,7 @@
 // MARK: - Advanced Settings - Switcher Position Settings
 "switcher_vertical_position_label" = "Vertical Position";
 "switcher_vertical_position_description" = "Adjust switcher's vertical position on screen (distance from top / screen height)";
+"current_position" = "Current: %@";
 "reset_to_golden_ratio" = "Reset";
 
 // MARK: - Advanced Settings - Switcher Header Style Settings

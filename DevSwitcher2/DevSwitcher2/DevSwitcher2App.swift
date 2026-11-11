@@ -30,30 +30,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Clean up Timer resource
         accessibilityCheckTimer?.invalidate()
         accessibilityCheckTimer = nil
+        NotificationCenter.default.removeObserver(self, name: .menuBarIconVisibilityChanged, object: nil)
         Logger.log("🗑️ AppDelegate deinitialized, Timer resource released")
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Create the status bar item
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(menuBarIconVisibilityChanged),
+            name: .menuBarIconVisibilityChanged,
+            object: nil
+        )
+        updateStatusItemVisibility()
         
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "rectangle.2.swap", accessibilityDescription: LocalizedStrings.statusItemTooltip)
-            button.action = #selector(statusBarButtonClicked)
-            button.target = self
-            button.toolTip = LocalizedStrings.statusItemTooltip
-            
-            // Set up the right-click menu
-            setupStatusBarMenu()
-        }
-        
-        // Initialize managers
+        // Initialize managers regardless of whether the status item is visible
         windowManager = WindowManager()
         hotkeyManager = HotkeyManager(windowManager: windowManager!)
         
         // Set up the bidirectional reference
         windowManager?.hotkeyManager = hotkeyManager
         
+        // Hosted unit tests must not show permission alerts or intercept real keyboard input.
+        guard NSClassFromString("XCTestCase") == nil else { return }
+
         // Request accessibility permissions
         requestAccessibilityPermission()
         
@@ -61,6 +60,40 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         hotkeyManager?.registerHotkey()
     }
     
+    @objc private func menuBarIconVisibilityChanged() {
+        updateStatusItemVisibility()
+    }
+
+    private func updateStatusItemVisibility() {
+        if SettingsManager.shared.settings.showMenuBarIcon {
+            createStatusItemIfNeeded()
+        } else {
+            removeStatusItemIfNeeded()
+        }
+    }
+
+    private func createStatusItemIfNeeded() {
+        guard statusItem == nil else { return }
+
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = item
+
+        if let button = item.button {
+            button.image = NSImage(systemSymbolName: "rectangle.2.swap", accessibilityDescription: LocalizedStrings.statusItemTooltip)
+            button.action = #selector(statusBarButtonClicked)
+            button.target = self
+            button.toolTip = LocalizedStrings.statusItemTooltip
+        }
+
+        setupStatusBarMenu()
+    }
+
+    private func removeStatusItemIfNeeded() {
+        guard let item = statusItem else { return }
+        NSStatusBar.system.removeStatusItem(item)
+        statusItem = nil
+    }
+
     @objc func statusBarButtonClicked() {
         // Left-click now shows the menu instead of triggering the main logic
         if let menu = statusItem?.menu {
@@ -86,6 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem?.menu = menu
     }
     
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // Reopening from Applications, Finder, or Spotlight remains a settings entry
+        // even when the menu bar icon is hidden. Do not force the icon back on.
+        showPreferences()
+        return true
+    }
+
     @objc func showPreferences() {
         // If the preferences window already exists, bring it to the front
         if let window = preferencesWindow {

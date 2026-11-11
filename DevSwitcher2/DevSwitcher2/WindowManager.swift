@@ -811,7 +811,10 @@ class WindowManager: ObservableObject {
                             appName: targetApp.localizedName ?? ""
                         )
                     } else {
-                        displayTitle = "\(targetApp.localizedName ?? "App") window \(windowCounter)"
+                        displayTitle = LocalizedStrings.unnamedWindow(
+                            appName: targetApp.localizedName ?? LocalizedStrings.defaultAppName,
+                            number: windowCounter
+                        )
                         projectName = displayTitle
                         windowCounter += 1
                     }
@@ -956,7 +959,10 @@ class WindowManager: ObservableObject {
                         appName: appInfo.appName
                     )
                 } else {
-                    displayTitle = "\(appInfo.appName) window \(windowCounter)"
+                    displayTitle = LocalizedStrings.unnamedWindow(
+                        appName: appInfo.appName,
+                        number: windowCounter
+                    )
                     projectName = displayTitle
                     windowCounter += 1
                 }
@@ -1964,7 +1970,9 @@ class WindowManager: ObservableObject {
                 } else if !cgTitle.isEmpty {
                     finalTitle = cgTitle
                 } else {
-                    finalTitle = "\(targetApp.localizedName ?? "应用") 窗口"
+                    finalTitle = LocalizedStrings.unnamedWindow(
+                        appName: targetApp.localizedName ?? LocalizedStrings.defaultAppName
+                    )
                 }
                 
                 if !finalTitle.isEmpty && !windowTitles.contains(finalTitle) {
@@ -2074,7 +2082,10 @@ class WindowManager: ObservableObject {
             } else if !cgTitle.isEmpty {
                 finalTitle = cgTitle
             } else {
-                finalTitle = "\(targetApp.localizedName ?? "应用") window \(windowIndexByProcess[processID] ?? 1)"
+                finalTitle = LocalizedStrings.unnamedWindow(
+                    appName: targetApp.localizedName ?? LocalizedStrings.defaultAppName,
+                    number: windowIndexByProcess[processID] ?? 1
+                )
             }
 
             if !finalTitle.trimmingCharacters(in: .whitespaces).isEmpty {

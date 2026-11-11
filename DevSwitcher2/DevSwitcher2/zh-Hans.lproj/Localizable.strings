@@ -21,6 +21,8 @@
 "general_settings_section_title" = "通用设置";
 "launch_at_startup" = "开机自启动";
 "launch_at_startup_description" = "登录时自动启动 DevSwitcher2";
+"show_menu_bar_icon" = "显示菜单栏图标";
+"show_menu_bar_icon_description" = "隐藏后，可从应用程序或 Spotlight 再次打开 DevSwitcher2 进入偏好设置；切换器和快捷键会继续运行。";
 
 // MARK: - DS2窗口切换器界面
 "window_switcher_title" = "选择窗口";
@@ -58,6 +60,9 @@
 
 // MARK: - 错误信息
 "no_windows_found" = "未找到当前应用的窗口";
+"default_app_name" = "应用";
+"unnamed_window" = "%@ 窗口";
+"unnamed_window_numbered" = "%@ 窗口 %d";
 "hotkey_registration_failed" = "热键注册失败";
 "hotkey_registration_success" = "成功注册 Command + ` 热键";
 "hotkey_conflict_title" = "快捷键冲突";
@@ -179,7 +184,7 @@
 "preview" = "预览结果";
 "preview_window_titles" = "窗口标题";
 "select_window_title" = "选择窗口标题";
-"no_windows_found" = "未找到该应用的窗口";
+"preview_no_windows_found" = "未找到该应用的窗口";
 "app_not_running" = "应用程序当前未运行";
 "extraction_result" = "提取结果";
 "copy_title" = "点击复制标题";
@@ -210,6 +215,7 @@
 // MARK: - 高级设置 - 切换器位置设置
 "switcher_vertical_position_label" = "垂直位置";
 "switcher_vertical_position_description" = "调整切换器在屏幕上的垂直位置（距离顶端 / 屏幕高度）";
+"current_position" = "当前：%@";
 "reset_to_golden_ratio" = "重置";
 
 // MARK: - 高级设置 - 切换器标题栏样式设置

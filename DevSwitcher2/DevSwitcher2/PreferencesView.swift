@@ -133,6 +133,42 @@ struct GeneralSettingsSection: View {
                     ))
                     .toggleStyle(SwitchToggleStyle(tint: .accentColor))
                 }
+
+                Divider()
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStrings.showMenuBarIcon)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+
+                        Text(LocalizedStrings.showMenuBarIconDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { settingsManager.settings.showMenuBarIcon },
+                        set: { newValue in
+                            settingsManager.updateShowMenuBarIcon(newValue)
+                        }
+                    ))
+                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                }
+
+                Divider()
+
+                HStack {
+                    Spacer()
+                    Button(LocalizedStrings.quitApp, role: .destructive) {
+                        NSApplication.shared.terminate(nil)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
             }
             .padding(20)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -983,7 +1019,7 @@ struct PreviewSectionView: View {
                     .foregroundColor(.red)
                     .italic()
             } else if windowTitles.isEmpty {
-                Text(LocalizedStrings.noWindowsFound)
+                Text(LocalizedStrings.previewNoWindowsFound)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .italic()
@@ -2040,7 +2076,7 @@ struct VerticalPositionControl: View {
             }
             
             // Current value display
-            Text("Current: \(String(format: "%.1f%%", currentPosition * 100))")
+            Text(LocalizedStrings.currentPosition(String(format: "%.1f%%", currentPosition * 100)))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -2273,6 +2309,7 @@ struct ColorSchemeCardView: View {
 // MARK: - Notification Extensions
 extension Notification.Name {
     static let hotkeySettingsChanged = Notification.Name("hotkeySettingsChanged")
+    static let menuBarIconVisibilityChanged = Notification.Name("menuBarIconVisibilityChanged")
 }
 
 #Preview {

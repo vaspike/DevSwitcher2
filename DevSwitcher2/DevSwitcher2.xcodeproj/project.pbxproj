@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		DE0517C00000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 574FC6C22E350802004915FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 574FC6C92E350802004915FC;
+			remoteInfo = DevSwitcher2;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		574FC6CA2E350802004915FC /* DevSwitcher2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DevSwitcher2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE0517C00000000000000001 /* DevSwitcher2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DevSwitcher2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = DevSwitcher2;
 			sourceTree = "<group>";
 		};
+		DE0517C00000000000000002 /* DevSwitcher2Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DevSwitcher2Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		574FC6C72E350802004915FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE0517C00000000000000003 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				574FC6CC2E350802004915FC /* DevSwitcher2 */,
+				DE0517C00000000000000002 /* DevSwitcher2Tests */,
 				574FC6CB2E350802004915FC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				574FC6CA2E350802004915FC /* DevSwitcher2.app */,
+				DE0517C00000000000000001 /* DevSwitcher2Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,28 @@
 			productReference = 574FC6CA2E350802004915FC /* DevSwitcher2.app */;
 			productType = "com.apple.product-type.application";
 		};
+		DE0517C00000000000000005 /* DevSwitcher2Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DE0517C0000000000000000A /* Build configuration list for PBXNativeTarget "DevSwitcher2Tests" */;
+			buildPhases = (
+				DE0517C00000000000000004 /* Sources */,
+				DE0517C00000000000000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DE0517C00000000000000006 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DE0517C00000000000000002 /* DevSwitcher2Tests */,
+			);
+			name = DevSwitcher2Tests;
+			packageProductDependencies = (
+			);
+			productName = DevSwitcher2Tests;
+			productReference = DE0517C00000000000000001 /* DevSwitcher2Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +129,10 @@
 				TargetAttributes = {
 					574FC6C92E350802004915FC = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					DE0517C00000000000000005 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 574FC6C92E350802004915FC;
 					};
 				};
 			};
@@ -101,6 +152,7 @@
 			projectRoot = "";
 			targets = (
 				574FC6C92E350802004915FC /* DevSwitcher2 */,
+				DE0517C00000000000000005 /* DevSwitcher2Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -123,7 +175,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DE0517C00000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DE0517C00000000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 574FC6C92E350802004915FC /* DevSwitcher2 */;
+			targetProxy = DE0517C00000000000000007 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		574FC6D72E350803004915FC /* Debug */ = {
@@ -304,6 +371,36 @@
 			};
 			name = Release;
 		};
+		DE0517C00000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J2Z7DS5ZPY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rivermao.DevSwitcher2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DevSwitcher2.app/Contents/MacOS/DevSwitcher2";
+			};
+			name = Debug;
+		};
+		DE0517C00000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J2Z7DS5ZPY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rivermao.DevSwitcher2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DevSwitcher2.app/Contents/MacOS/DevSwitcher2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -321,6 +418,15 @@
 			buildConfigurations = (
 				574FC6DA2E350803004915FC /* Debug */,
 				574FC6DB2E350803004915FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DE0517C0000000000000000A /* Build configuration list for PBXNativeTarget "DevSwitcher2Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DE0517C00000000000000008 /* Debug */,
+				DE0517C00000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

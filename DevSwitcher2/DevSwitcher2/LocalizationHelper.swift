@@ -105,6 +105,8 @@ struct LocalizedStrings {
     static let generalSettingsSectionTitle = "general_settings_section_title".localized
     static let launchAtStartup = "launch_at_startup".localized
     static let launchAtStartupDescription = "launch_at_startup_description".localized
+    static let showMenuBarIcon = "show_menu_bar_icon".localized
+    static let showMenuBarIconDescription = "show_menu_bar_icon_description".localized
     
     // MARK: - DS2 Window Switcher Interface
     static let windowSwitcherTitle = "window_switcher_title".localized
@@ -148,6 +150,13 @@ struct LocalizedStrings {
     
     // MARK: - Error Messages
     static let noWindowsFound = "no_windows_found".localized
+    static let defaultAppName = "default_app_name".localized
+    static func unnamedWindow(appName: String, number: Int? = nil) -> String {
+        if let number = number {
+            return "unnamed_window_numbered".localized(with: appName, number)
+        }
+        return "unnamed_window".localized(with: appName)
+    }
     static let hotkeyRegistrationFailed = "hotkey_registration_failed".localized
     static let hotkeyRegistrationSuccess = "hotkey_registration_success".localized
     static let hotkeyConflictTitle = "hotkey_conflict_title".localized
@@ -252,6 +261,7 @@ struct LocalizedStrings {
     static let preview = "preview".localized
     static let previewWindowTitles = "preview_window_titles".localized
     static let selectWindowTitle = "select_window_title".localized
+    static let previewNoWindowsFound = "preview_no_windows_found".localized
     static let appNotRunning = "app_not_running".localized
     static let extractionResult = "extraction_result".localized
     static let copyTitle = "copy_title".localized
@@ -346,6 +356,9 @@ struct LocalizedStrings {
     // MARK: - Switcher Position Settings
     static let switcherVerticalPositionLabel = "switcher_vertical_position_label".localized
     static let switcherVerticalPositionDescription = "switcher_vertical_position_description".localized
+    static func currentPosition(_ percentage: String) -> String {
+        return "current_position".localized(with: percentage)
+    }
     static let resetToGoldenRatio = "reset_to_golden_ratio".localized
     
     // MARK: - Switcher Header Style Settings

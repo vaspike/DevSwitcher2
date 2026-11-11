@@ -212,6 +212,8 @@
 "switcher_behavior_section_title" = "Switcher Behavior Settings";
 "follow_active_window_label" = "Follow Active Window";
 "follow_active_window_description" = "Display switcher on the same screen as the active window, otherwise always on primary display";
+"select_next_item_on_open" = "Select Next Item on Open";
+"select_next_item_on_open_description" = "Otherwise, keep the current window or app selected when the switcher opens.";
 
 // MARK: - Advanced Settings - Switcher Position Settings
 "switcher_vertical_position_label" = "Vertical Position";
@@ -290,7 +292,7 @@
 
 // MARK: - About Page
 "about_app" = "About DevSwitcher2";
-"version" = "Version 2.8.2";
+"version" = "Version 2.9.0";
 "app_description" = "A modern menu bar app that enhances window and app switching for a smoother workflow.";
 "development_info" = "Development Information";
 "author" = "Author";

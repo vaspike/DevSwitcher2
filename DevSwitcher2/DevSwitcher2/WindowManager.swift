@@ -487,6 +487,10 @@ class WindowManager: ObservableObject {
         }
     }
     
+    static func initialSelectionIndex(itemCount: Int, selectNext: Bool) -> Int {
+        return selectNext && itemCount > 1 ? 1 : 0
+    }
+
     func showWindowSwitcher() {
         guard !isShowingSwitcher else { return }
         
@@ -502,8 +506,11 @@ class WindowManager: ObservableObject {
         }
         
         isShowingSwitcher = true
-        // 默认选中第二个窗口（跳过当前窗口）
-        currentWindowIndex = windows.count > 1 ? 1 : 0
+        // 根据设置选择当前窗口或顺时针下一窗口
+        currentWindowIndex = Self.initialSelectionIndex(
+            itemCount: windows.count,
+            selectNext: settingsManager.settings.selectNextItemOnOpen
+        )
         
         // 暂时禁用全局热键，避免冲突
         hotkeyManager?.temporarilyDisableHotkey()
@@ -558,8 +565,11 @@ class WindowManager: ObservableObject {
         }
         
         isShowingAppSwitcher = true
-        // 默认选中第二个应用（跳过当前应用）
-        currentAppIndex = apps.count > 1 ? 1 : 0
+        // 根据设置选择当前应用或顺时针下一应用
+        currentAppIndex = Self.initialSelectionIndex(
+            itemCount: apps.count,
+            selectNext: settingsManager.settings.selectNextItemOnOpen
+        )
         
         // 暂时禁用全局热键，避免冲突
         hotkeyManager?.temporarilyDisableHotkey()

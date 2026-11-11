@@ -1730,6 +1730,20 @@ struct SwitcherDisplaySettingsView: View {
 
                 Divider()
 
+                SettingRow(
+                    LocalizedStrings.selectNextItemOnOpen,
+                    description: LocalizedStrings.selectNextItemOnOpenDescription
+                ) {
+                    Toggle("", isOn: Binding(
+                        get: { settingsManager.settings.selectNextItemOnOpen },
+                        set: { settingsManager.updateSelectNextItemOnOpen($0) }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                }
+
+                Divider()
+
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(LocalizedStrings.switcherVerticalPositionLabel)

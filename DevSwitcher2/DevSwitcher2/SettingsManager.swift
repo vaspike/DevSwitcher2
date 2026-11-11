@@ -501,6 +501,7 @@ struct AppSettings: Codable {
     
     // Switcher behavior settings
     var switcherFollowActiveWindow: Bool
+    var selectNextItemOnOpen: Bool
     
     // Switcher position settings
     var switcherVerticalPosition: Double // 0.1 to 0.8, default 0.39 (golden ratio)
@@ -571,6 +572,7 @@ struct AppSettings: Codable {
         showNumberKeys: true,
         // Switcher behavior default settings
         switcherFollowActiveWindow: true,
+        selectNextItemOnOpen: true,
         // Switcher position default settings
         switcherVerticalPosition: 0.39,
         // Switcher header style default settings
@@ -602,6 +604,7 @@ extension AppSettings {
         case showMenuBarIcon
         case showNumberKeys
         case switcherFollowActiveWindow
+        case selectNextItemOnOpen
         case switcherVerticalPosition
         case switcherHeaderStyle
         case switcherLayoutStyle
@@ -625,6 +628,7 @@ extension AppSettings {
         showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? true
         showNumberKeys = try container.decode(Bool.self, forKey: .showNumberKeys)
         switcherFollowActiveWindow = try container.decode(Bool.self, forKey: .switcherFollowActiveWindow)
+        selectNextItemOnOpen = try container.decodeIfPresent(Bool.self, forKey: .selectNextItemOnOpen) ?? true
         switcherVerticalPosition = try container.decode(Double.self, forKey: .switcherVerticalPosition)
         switcherHeaderStyle = try container.decode(SwitcherHeaderStyle.self, forKey: .switcherHeaderStyle)
         switcherLayoutStyle = try container.decode(SwitcherLayoutStyle.self, forKey: .switcherLayoutStyle)
@@ -733,6 +737,11 @@ class SettingsManager: ObservableObject {
     // MARK: - Switcher Behavior Settings
     func updateSwitcherFollowActiveWindow(_ enabled: Bool) {
         settings.switcherFollowActiveWindow = enabled
+        saveSettings()
+    }
+
+    func updateSelectNextItemOnOpen(_ enabled: Bool) {
+        settings.selectNextItemOnOpen = enabled
         saveSettings()
     }
     

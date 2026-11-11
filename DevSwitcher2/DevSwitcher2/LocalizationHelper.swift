@@ -353,6 +353,8 @@ struct LocalizedStrings {
     static let switcherBehaviorSectionTitle = "switcher_behavior_section_title".localized
     static let followActiveWindowLabel = "follow_active_window_label".localized
     static let followActiveWindowDescription = "follow_active_window_description".localized
+    static let selectNextItemOnOpen = "select_next_item_on_open".localized
+    static let selectNextItemOnOpenDescription = "select_next_item_on_open_description".localized
     
     // MARK: - Switcher Position Settings
     static let switcherVerticalPositionLabel = "switcher_vertical_position_label".localized

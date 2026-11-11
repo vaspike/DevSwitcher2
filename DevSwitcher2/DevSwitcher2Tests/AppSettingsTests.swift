@@ -6,6 +6,10 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertTrue(AppSettings.default.showMenuBarIcon)
     }
 
+    func testSelectNextItemOnOpenIsEnabledByDefault() {
+        XCTAssertTrue(AppSettings.default.selectNextItemOnOpen)
+    }
+
     func testFirstInstallAndResetAppearanceDefaults() {
         let defaults = AppSettings.default
         XCTAssertEqual(defaults.switcherLayoutStyle, .circular)
@@ -43,11 +47,13 @@ final class AppSettingsTests: XCTestCase {
             JSONSerialization.jsonObject(with: encodedSettings) as? [String: Any]
         )
         legacyJSONObject.removeValue(forKey: "showMenuBarIcon")
+        legacyJSONObject.removeValue(forKey: "selectNextItemOnOpen")
         let legacyData = try JSONSerialization.data(withJSONObject: legacyJSONObject)
 
         let migratedSettings = try JSONDecoder().decode(AppSettings.self, from: legacyData)
 
         XCTAssertTrue(migratedSettings.showMenuBarIcon)
+        XCTAssertTrue(migratedSettings.selectNextItemOnOpen)
         XCTAssertEqual(migratedSettings.modifierKey, .option)
         XCTAssertEqual(migratedSettings.triggerKey, .space)
         XCTAssertFalse(migratedSettings.ct2Enabled)
@@ -76,5 +82,15 @@ final class AppSettingsTests: XCTestCase {
         let decodedSettings = try JSONDecoder().decode(AppSettings.self, from: data)
 
         XCTAssertFalse(decodedSettings.showMenuBarIcon)
+    }
+
+    func testDisabledSelectNextItemOnOpenSurvivesPersistenceRoundTrip() throws {
+        var settings = AppSettings.default
+        settings.selectNextItemOnOpen = false
+
+        let data = try JSONEncoder().encode(settings)
+        let decodedSettings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        XCTAssertFalse(decodedSettings.selectNextItemOnOpen)
     }
 }
